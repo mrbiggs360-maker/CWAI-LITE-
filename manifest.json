@@ -1,0 +1,72 @@
+{
+  "name": "CWAI Lite",
+  "short_name": "CWAI Lite",
+  "start_url": "./CWAI 1.4 LITE.html",
+  "id": "./CWAI 1.4 LITE.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#2563eb",
+  "description": "Lightweight Gemini API Storytelling Interface",
+  "orientation": "portrait-primary",
+  "categories": [
+    "entertainment",
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "https://dummyimage.com/192x192/2563eb/ffffff.png&text=CW+Lite",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://dummyimage.com/192x192/2563eb/ffffff.png&text=CW+Lite",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://dummyimage.com/512x512/2563eb/ffffff.png&text=CW+Lite",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://dummyimage.com/512x512/2563eb/ffffff.png&text=CW+Lite",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://dummyimage.com/1080x1920/050505/2563eb.png&text=Lite+Interface",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile Chat"
+    },
+    {
+      "src": "https://dummyimage.com/1920x1080/050505/2563eb.png&text=CWAI+Lite+Desktop",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Story",
+      "short_name": "New",
+      "url": "./CWAI 1.4 LITE.html?action=new",
+      "icons": [
+        {
+          "src": "https://dummyimage.com/192x192/2563eb/ffffff.png&text=+",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
