@@ -1,8 +1,8 @@
 {
   "name": "CWAI Lite",
   "short_name": "CWAI Lite",
-  "start_url": "./CWAI%201.4%20LITE.html",
-  "id": "./CWAI%201.4%20LITE.html",
+  "start_url": "./index.html",
+  "id": "cwai-lite-pwa",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#2563eb",
@@ -59,7 +59,7 @@
     {
       "name": "New Story",
       "short_name": "New",
-      "url": "./CWAI%201.4%20LITE.html?action=new",
+      "url": "./index.html?action=new",
       "icons": [
         {
           "src": "https://dummyimage.com/192x192/2563eb/ffffff.png&text=+",
