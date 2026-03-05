@@ -1,7 +1,7 @@
-const CACHE_NAME = 'cwai-lite-v1.4';
+const CACHE_NAME = 'cwai-lite-v1.5';
 const ASSETS_TO_CACHE = [
   './',
-  './CWAI%201.4%20LITE.html',
+  './index.html',
   './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap',
