@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.4 Lite</title>
+    <title>CWAI 1.5 Lite</title>
     
-    <!-- PWA Installation Links -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
     <link rel="apple-touch-icon" href="https://dummyimage.com/192x192/2563eb/ffffff.png&text=CW+Lite">
@@ -104,7 +103,6 @@
 </head>
 <body class="h-screen w-screen flex flex-col relative bg-black selection:bg-blue-500/30 selection:text-blue-200">
 
-    <!-- Modal System -->
     <div id="modal-backdrop" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden transition-opacity duration-300 items-center justify-center p-6 opacity-0">
         <div class="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-pop-in">
             <h3 class="text-lg font-bold text-white mb-2" id="modal-title">Rename Story</h3>
@@ -129,10 +127,10 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.4 Lite</h1>
+                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.5 Lite</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
-                    <span id="model-display-name">Gemini 2.5 Flash Lite</span>
+                    <span id="model-display-name">Gemini 3.1 Flash Lite</span>
                 </div>
             </div>
         </div>
@@ -196,11 +194,19 @@
                 </div>
                 
                 <div class="bg-blue-900/5 p-4 rounded-xl border border-blue-500/20 text-blue-300 text-[10px] italic leading-relaxed animate-fade-in">
-                    Tip: Use the Lore tab to set global AI instructions for your story.
+                    Tip: Use the Lore tab to set global AI instructions and manage your automated Story Recap.
                 </div>
             </div>
 
             <div id="tab-lore" class="hidden space-y-4 fade-in">
+                
+                <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition animate-pop-in">
+                    <h3 class="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ri-history-line"></i> Story Recap</h3>
+                    <p class="text-[10px] text-gray-500 mb-2 leading-relaxed">The AI automatically summarizes your past 20 messages here to remember older context while keeping API costs low.</p>
+                    <textarea id="story-recap-input" class="w-full h-32 bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white resize-none focus:border-green-500 outline-none transition custom-scroll" placeholder="Story recap will appear here..."></textarea>
+                    <button onclick="saveRecap()" class="w-full py-2 bg-green-600/10 border border-green-600/20 text-green-400 text-xs font-bold rounded-lg hover:bg-green-600 hover:text-white transition mt-2 btn-press">Save Recap Manually</button>
+                </div>
+
                 <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition animate-pop-in">
                     <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ri-robot-line"></i> AI Instructions</h3>
                     <textarea id="ai-instruct-input" class="w-full h-32 bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white resize-none focus:border-blue-500 outline-none transition" placeholder="How should the AI behave?"></textarea>
@@ -234,7 +240,6 @@
                     <button onclick="processImport()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded text-xs font-bold btn-press">Import Data</button>
                 </div>
 
-                <!-- Factory Reset in Data Tab -->
                 <div class="bg-red-900/10 rounded-xl p-4 border border-red-900/20 animate-pop-in">
                     <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ri-refresh-line"></i> System Reset</h3>
                     <p class="text-[10px] text-gray-500 mb-3 leading-relaxed italic">Wipes all stored sessions, lore items, and API configurations permanently.</p>
@@ -263,7 +268,7 @@
 
         if (!activeId || !sessions[activeId]) {
             const newId = Date.now().toString();
-            sessions[newId] = { id: newId, name: "New Story", history: [], lore: [], instructions: "" };
+            sessions[newId] = { id: newId, name: "New Story", history: [], lore: [], instructions: "", recap: "" };
             activeId = newId;
         }
         let state = sessions[activeId];
@@ -271,9 +276,21 @@
         
         function showToast(msg, type = 'info') {
             const el = document.createElement('div');
-            const styles = { error: 'bg-red-500/10 border-red-500/50 text-red-200', success: 'bg-green-500/10 border-green-500/50 text-green-200', info: 'bg-gray-800/90 border-gray-700 text-gray-200' };
+            // Updated info style to use blue tones as requested for "Saving Recap"
+            const styles = { 
+                error: 'bg-red-500/10 border-red-500/50 text-red-200', 
+                success: 'bg-green-500/10 border-green-500/50 text-green-200', 
+                info: 'bg-blue-500/10 border border-blue-500/50 text-blue-200 backdrop-blur-md' 
+            };
+            
             el.className = `p-3 rounded-lg border text-xs shadow-xl backdrop-blur animate-slide-in pointer-events-auto flex items-center gap-2 transform transition-all duration-300 ${styles[type]||styles.info}`;
-            el.innerHTML = `<i class="ri-${type==='error'?'error-warning':(type==='success'?'checkbox-circle':'information')}-line text-base"></i> <span class="font-medium">${msg}</span>`;
+            
+            let iconClass = 'ri-information-line';
+            if(type === 'error') iconClass = 'ri-error-warning-line';
+            if(type === 'success') iconClass = 'ri-checkbox-circle-line';
+            if(msg === 'Saving Recap...') iconClass = 'ri-loader-4-line animate-spin'; // Add spinning icon for saving
+
+            el.innerHTML = `<i class="${iconClass} text-base"></i> <span class="font-medium">${msg}</span>`;
             $('toast-container').appendChild(el);
             setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(), 300); }, 3000);
         }
@@ -282,6 +299,7 @@
             if (!sess.history && sess.chatHistory) sess.history = sess.chatHistory;
             if (!sess.history) sess.history = [];
             if (sess.aiInstructions && !sess.instructions) sess.instructions = sess.aiInstructions;
+            if (sess.recap === undefined) sess.recap = "";
             if (!Array.isArray(sess.lore) && typeof sess.lore === 'object') {
                 let arr = [];
                 Object.values(sess.lore).forEach(v => { if (Array.isArray(v)) arr.push(...v); });
@@ -295,9 +313,11 @@
             const container = $('chat-container');
             container.innerHTML = '';
             if (!state.history || state.history.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.4 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.5 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
                 return;
             }
+            
+            // Still rendering full history for UI visibility as requested
             state.history.forEach(msg => {
                 const isUser = msg.role === 'user';
                 const text = msg.parts ? msg.parts[0].text : "";
@@ -315,6 +335,42 @@
             requestAnimationFrame(() => c.scrollTop = c.scrollHeight);
         }
 
+        // NEW: Background AI Summary Generator
+        async function generateRecap() {
+            showToast("Saving Recap...", "info"); // Uses new blue toast format
+            
+            // Gather the messages we want to summarize (the current 20 message window)
+            const messagesToSummarize = state.history.slice(-20);
+            let textToSummarize = messagesToSummarize.map(m => `${m.role.toUpperCase()}: ${m.parts[0].text}`).join('\n\n');
+            
+            const prompt = `Write a 1 or 2 paragraph recap of the following story events. Include important details, character actions, and context so the AI won't forget them.\n\nPrevious Recap Context: ${state.recap || "None."}\n\nNew Events to Summarize:\n${textToSummarize}`;
+            
+            const payload = {
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            };
+            
+            try {
+                const endpoint = apiConfig.url || DEFAULT_URL;
+                const response = await fetch(`${endpoint}?key=${apiConfig.primary}`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+                const data = await response.json();
+                
+                if (data.error) throw new Error(data.error.message);
+                
+                state.recap = data.candidates[0].content.parts[0].text;
+                $('story-recap-input').value = state.recap;
+                saveState();
+                showToast("Successfully saved!", "success"); // Green success toast
+                
+            } catch (err) {
+                console.error("Auto-Recap generation failed:", err);
+                showToast("Failed to generate recap", "error");
+            }
+        }
+
         async function sendMessage(textOverride) {
             const inputEl = $('user-input');
             const text = textOverride || inputEl.value.trim();
@@ -323,27 +379,48 @@
             if (!textOverride) { inputEl.value = ''; inputEl.style.height = 'auto'; }
             state.history.push({ role: 'user', parts: [{ text }] });
             renderChat();
+            
             const container = $('chat-container');
             const thinkingDiv = document.createElement('div');
             thinkingDiv.className = `flex w-full justify-start animate-enter-message mb-6`;
             thinkingDiv.innerHTML = `<div class="msg-ai px-5 py-3.5 text-sm shadow-md"><div class="flex gap-1 py-1"><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce delay-100"></span><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce delay-200"></span></div></div>`;
             container.appendChild(thinkingDiv);
             scrollToBottom();
+            
             let loreText = "";
             if (Array.isArray(state.lore)) state.lore.forEach(l => loreText += `${l.name}: ${l.description}\n`);
+            
+            // Build the system instructions containing base instructions, recap, and lore.
+            const recapText = state.recap ? `\nSTORY RECAP (Prior Events):\n${state.recap}\n` : "";
+            const systemText = `Instructions: ${state.instructions || "You are a helpful creative assistant."}\n${recapText}\nLore/Context:\n${loreText}`;
+
+            // Limit payload history to only the last 20 messages for cost efficiency
+            const contextWindow = state.history.slice(-20);
+
             const payload = {
-                system_instruction: { parts: [{ text: `Instructions: ${state.instructions || "You are a helpful creative assistant."}\n\nLore/Context:\n${loreText}` }] },
-                contents: state.history
+                system_instruction: { parts: [{ text: systemText }] },
+                contents: contextWindow
             };
+            
             try {
                 const endpoint = apiConfig.url || DEFAULT_URL;
                 const response = await fetch(`${endpoint}?key=${apiConfig.primary || "MISSING"}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message);
                 thinkingDiv.remove();
+                
                 state.history.push({ role: 'model', parts: [{ text: data.candidates[0].content.parts[0].text }] });
                 if (state.history.length === 2 && state.name === "New Story") state.name = text.substring(0, 30) + "...";
-                saveState(); renderChat(); renderSessionList();
+                
+                saveState(); 
+                renderChat(); 
+                renderSessionList();
+
+                // Trigger automatic recap if the history length is a multiple of 20
+                if (state.history.length > 0 && state.history.length % 20 === 0) {
+                    generateRecap();
+                }
+                
             } catch (err) {
                 thinkingDiv.remove(); state.history.pop(); renderChat();
                 showToast(err.message, "error");
@@ -374,9 +451,19 @@
             });
         }
 
-        function loadSession(id) { activeId = id; state = normalizeSession(sessions[id]); saveState(); renderChat(); renderLoreList(); $('ai-instruct-input').value = state.instructions || ""; renderSessionList(); if(window.innerWidth < 768) togglePanel(false); }
+        function loadSession(id) { 
+            activeId = id; 
+            state = normalizeSession(sessions[id]); 
+            saveState(); 
+            renderChat(); 
+            renderLoreList(); 
+            $('ai-instruct-input').value = state.instructions || ""; 
+            $('story-recap-input').value = state.recap || ""; // Load recap
+            renderSessionList(); 
+            if(window.innerWidth < 768) togglePanel(false); 
+        }
 
-        function createNewSession() { const id = Date.now().toString(); sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "" }; loadSession(id); showToast("New story started", "success"); }
+        function createNewSession() { const id = Date.now().toString(); sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "" }; loadSession(id); showToast("New story started", "success"); }
 
         function deleteSession(id) { if(Object.keys(sessions).length <= 1) return showToast("Keep at least one story", "error"); openConfirmModal("Delete Story?", "Erase history and lore permanently?", () => { delete sessions[id]; if(activeId === id) loadSession(Object.keys(sessions)[0]); else { saveState(); renderSessionList(); } }); }
 
@@ -432,6 +519,14 @@
 
         function saveModelSettings() { apiConfig.primary = $('primary-key-input').value; apiConfig.backup = $('backup-key-input').value; apiConfig.url = $('api-url-input').value; localStorage.setItem('cw_config', JSON.stringify(apiConfig)); showToast("Settings Saved", "success"); }
         function saveInstructions() { state.instructions = $('ai-instruct-input').value; saveState(); showToast("Updated Instructions", "success"); }
+        
+        // Manual Recap Save Function
+        function saveRecap() {
+            state.recap = $('story-recap-input').value;
+            saveState();
+            showToast("Successfully saved!", "success");
+        }
+
         function copyToClipboard() { navigator.clipboard.writeText(JSON.stringify(sessions, null, 2)).then(() => showToast("Full Backup Copied", "success")); }
         function processImport() { try { const raw = $('import-area').value.trim(); if(!raw) return; const data = JSON.parse(raw); if(data.id) sessions[data.id] = normalizeSession(data); else Object.keys(data).forEach(k => sessions[k] = normalizeSession(data[k])); saveState(); renderSessionList(); $('import-area').value = ''; showToast("Imported data", "success"); } catch(e) { showToast("Invalid JSON", "error"); } }
 
@@ -452,4 +547,3 @@
     </script>
 </body>
 </html>
-
