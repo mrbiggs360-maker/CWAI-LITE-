@@ -2,7 +2,7 @@
   "name": "CWAI Lite",
   "short_name": "CWAI Lite",
   "start_url": "./index.html",
-  "id": "cwai-lite-pwa",
+  "id": "/",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#2563eb",
@@ -18,25 +18,13 @@
       "src": "https://dummyimage.com/192x192/2563eb/ffffff.png&text=CW+Lite",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://dummyimage.com/192x192/2563eb/ffffff.png&text=CW+Lite",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "https://dummyimage.com/512x512/2563eb/ffffff.png&text=CW+Lite",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://dummyimage.com/512x512/2563eb/ffffff.png&text=CW+Lite",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "screenshots": [
@@ -59,7 +47,7 @@
     {
       "name": "New Story",
       "short_name": "New",
-      "url": "./index.html?action=new",
+      "url": "./index.html",
       "icons": [
         {
           "src": "https://dummyimage.com/192x192/2563eb/ffffff.png&text=+",
@@ -70,3 +58,4 @@
     }
   ]
 }
+
