@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CWAI 1.4 Lite</title>
     
-    <link rel="manifest" href="manifest.json">
+    <!-- PWA Installation Links -->
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://dummyimage.com/192x192/2563eb/ffffff.png&text=CW+Lite">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -105,6 +104,7 @@
 </head>
 <body class="h-screen w-screen flex flex-col relative bg-black selection:bg-blue-500/30 selection:text-blue-200">
 
+    <!-- Modal System -->
     <div id="modal-backdrop" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden transition-opacity duration-300 items-center justify-center p-6 opacity-0">
         <div class="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-pop-in">
             <h3 class="text-lg font-bold text-white mb-2" id="modal-title">Rename Story</h3>
@@ -194,12 +194,6 @@
                         <button onclick="saveModelSettings()" class="w-full py-2.5 bg-blue-600/10 border border-blue-600/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-600 hover:text-white transition mt-2 btn-press shadow-sm">Save Settings</button>
                     </div>
                 </div>
-
-                <div class="bg-red-900/10 rounded-xl p-4 border border-red-900/20 animate-pop-in">
-                    <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ri-refresh-line"></i> System Reset</h3>
-                    <p class="text-[10px] text-gray-500 mb-3 leading-relaxed italic">Wipes all stored sessions, lore items, and API configurations permanently.</p>
-                    <button onclick="factoryReset()" class="w-full py-2 bg-red-900/20 border border-red-900/40 text-red-400 text-[10px] font-bold rounded-lg hover:bg-red-600 hover:text-white transition btn-press">Factory Reset</button>
-                </div>
                 
                 <div class="bg-blue-900/5 p-4 rounded-xl border border-blue-500/20 text-blue-300 text-[10px] italic leading-relaxed animate-fade-in">
                     Tip: Use the Lore tab to set global AI instructions for your story.
@@ -239,6 +233,13 @@
                     <textarea id="import-area" class="w-full h-20 bg-black/50 text-[10px] text-gray-400 p-2 rounded mb-2 border border-gray-800" placeholder="Paste session/full backup JSON here..."></textarea>
                     <button onclick="processImport()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded text-xs font-bold btn-press">Import Data</button>
                 </div>
+
+                <!-- Factory Reset in Data Tab -->
+                <div class="bg-red-900/10 rounded-xl p-4 border border-red-900/20 animate-pop-in">
+                    <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ri-refresh-line"></i> System Reset</h3>
+                    <p class="text-[10px] text-gray-500 mb-3 leading-relaxed italic">Wipes all stored sessions, lore items, and API configurations permanently.</p>
+                    <button onclick="factoryReset()" class="w-full py-2 bg-red-900/20 border border-red-900/40 text-red-400 text-[10px] font-bold rounded-lg hover:bg-red-600 hover:text-white transition btn-press">Factory Reset</button>
+                </div>
             </div>
         </div>
     </div>
@@ -246,6 +247,15 @@
     <div id="toast-container" class="fixed top-20 right-4 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker registered successfully'))
+                .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+
         let sessions = JSON.parse(localStorage.getItem('cw_sessions')) || {};
         let activeId = localStorage.getItem('cw_active_id');
         let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { primary: '', backup: '', url: '' };
@@ -433,16 +443,13 @@
         tx.addEventListener("input", function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; }, false);
         tx.onkeydown = (e) => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
 
-        // PWA Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Registered Successfully', reg.scope))
-                    .catch(err => console.error('Service Worker Registration Failed', err));
-            });
-        }
+        // Initialize Input Fields with saved apiConfig data to persist settings visibly
+        $('api-url-input').value = apiConfig.url || '';
+        $('primary-key-input').value = apiConfig.primary || '';
+        $('backup-key-input').value = apiConfig.backup || '';
 
         loadSession(activeId);
     </script>
 </body>
 </html>
+
