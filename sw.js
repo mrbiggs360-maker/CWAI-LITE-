@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cwai-lite-v1.5';
+const CACHE_NAME = 'cwai-lite-v1.6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -38,6 +38,11 @@ self.addEventListener('fetch', event => {
   // Do not try to cache API calls to the generative AI models
   if (event.request.url.includes('generativelanguage.googleapis.com')) {
     return;
+  }
+
+  // Also skip caching for our Google favicon internet check
+  if (event.request.url.includes('favicon.ico')) {
+      return;
   }
 
   event.respondWith(
