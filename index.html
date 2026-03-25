@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.5 Lite</title>
+    <title>CWAI 1.6 Lite</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
@@ -127,7 +127,7 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.5 Lite</h1>
+                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.6 Lite</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
                     <span id="model-display-name">Gemini 3.1 Flash Lite</span>
@@ -252,6 +252,15 @@
     <div id="toast-container" class="fixed top-20 right-4 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
+        // Online/Offline Event Listeners
+        window.addEventListener('offline', () => {
+            showToast("You are offline. Please check your connection.", "error");
+        });
+
+        window.addEventListener('online', () => {
+            showToast("Connection restored!", "success");
+        });
+
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -276,11 +285,11 @@
         
         function showToast(msg, type = 'info') {
             const el = document.createElement('div');
-            // Updated info style to use blue tones as requested for "Saving Recap"
             const styles = { 
                 error: 'bg-red-500/10 border-red-500/50 text-red-200', 
                 success: 'bg-green-500/10 border-green-500/50 text-green-200', 
-                info: 'bg-blue-500/10 border border-blue-500/50 text-blue-200 backdrop-blur-md' 
+                info: 'bg-blue-500/10 border border-blue-500/50 text-blue-200 backdrop-blur-md',
+                warning: 'bg-yellow-500/10 border border-yellow-500/50 text-yellow-200 backdrop-blur-md'
             };
             
             el.className = `p-3 rounded-lg border text-xs shadow-xl backdrop-blur animate-slide-in pointer-events-auto flex items-center gap-2 transform transition-all duration-300 ${styles[type]||styles.info}`;
@@ -288,7 +297,8 @@
             let iconClass = 'ri-information-line';
             if(type === 'error') iconClass = 'ri-error-warning-line';
             if(type === 'success') iconClass = 'ri-checkbox-circle-line';
-            if(msg === 'Saving Recap...') iconClass = 'ri-loader-4-line animate-spin'; // Add spinning icon for saving
+            if(type === 'warning') iconClass = 'ri-alert-line';
+            if(msg === 'Saving Recap...') iconClass = 'ri-loader-4-line animate-spin';
 
             el.innerHTML = `<i class="${iconClass} text-base"></i> <span class="font-medium">${msg}</span>`;
             $('toast-container').appendChild(el);
@@ -313,11 +323,10 @@
             const container = $('chat-container');
             container.innerHTML = '';
             if (!state.history || state.history.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.5 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.6 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
                 return;
             }
             
-            // Still rendering full history for UI visibility as requested
             state.history.forEach(msg => {
                 const isUser = msg.role === 'user';
                 const text = msg.parts ? msg.parts[0].text : "";
@@ -335,11 +344,20 @@
             requestAnimationFrame(() => c.scrollTop = c.scrollHeight);
         }
 
-        // NEW: Background AI Summary Generator
+        async function checkInternet() {
+            if (!navigator.onLine) return false;
+            try {
+                // Fetch the Google favicon with no-cors to test actual connectivity without CORS blocking
+                await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' });
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
         async function generateRecap() {
-            showToast("Saving Recap...", "info"); // Uses new blue toast format
+            showToast("Saving Recap...", "info");
             
-            // Gather the messages we want to summarize (the current 20 message window)
             const messagesToSummarize = state.history.slice(-20);
             let textToSummarize = messagesToSummarize.map(m => `${m.role.toUpperCase()}: ${m.parts[0].text}`).join('\n\n');
             
@@ -363,7 +381,7 @@
                 state.recap = data.candidates[0].content.parts[0].text;
                 $('story-recap-input').value = state.recap;
                 saveState();
-                showToast("Successfully saved!", "success"); // Green success toast
+                showToast("Successfully saved!", "success");
                 
             } catch (err) {
                 console.error("Auto-Recap generation failed:", err);
@@ -376,6 +394,14 @@
             const text = textOverride || inputEl.value.trim();
             if (!text) return;
             if (!apiConfig.primary && !apiConfig.backup) { togglePanel(true); switchTab('model'); showToast("API Key Required", "error"); return; }
+            
+            // Perform Internet Check Before Proceeding
+            const isConnected = await checkInternet();
+            if (!isConnected) {
+                showToast("No internet connection.", "error");
+                return;
+            }
+
             if (!textOverride) { inputEl.value = ''; inputEl.style.height = 'auto'; }
             state.history.push({ role: 'user', parts: [{ text }] });
             renderChat();
@@ -390,11 +416,9 @@
             let loreText = "";
             if (Array.isArray(state.lore)) state.lore.forEach(l => loreText += `${l.name}: ${l.description}\n`);
             
-            // Build the system instructions containing base instructions, recap, and lore.
             const recapText = state.recap ? `\nSTORY RECAP (Prior Events):\n${state.recap}\n` : "";
             const systemText = `Instructions: ${state.instructions || "You are a helpful creative assistant."}\n${recapText}\nLore/Context:\n${loreText}`;
 
-            // Limit payload history to only the last 20 messages for cost efficiency
             const contextWindow = state.history.slice(-20);
 
             const payload = {
@@ -402,10 +426,53 @@
                 contents: contextWindow
             };
             
+            // New 3-Stage Fetch Function with AbortController
+            const attemptFetch = async (key) => {
+                const controller = new AbortController();
+                const waitToast = setTimeout(() => showToast("Please wait...", "info"), 15000);
+                const timeoutTimer = setTimeout(() => controller.abort(), 30000);
+                
+                try {
+                    const endpoint = apiConfig.url || DEFAULT_URL;
+                    const response = await fetch(`${endpoint}?key=${key}`, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(payload),
+                        signal: controller.signal
+                    });
+                    clearTimeout(waitToast);
+                    clearTimeout(timeoutTimer);
+                    return await response.json();
+                } catch (err) {
+                    clearTimeout(waitToast);
+                    clearTimeout(timeoutTimer);
+                    if (err.name === 'AbortError') throw new Error('TIMEOUT');
+                    throw err;
+                }
+            };
+
             try {
-                const endpoint = apiConfig.url || DEFAULT_URL;
-                const response = await fetch(`${endpoint}?key=${apiConfig.primary || "MISSING"}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                const data = await response.json();
+                let data;
+                try {
+                    data = await attemptFetch(apiConfig.primary || "MISSING");
+                } catch (err) {
+                    if (err.message === 'TIMEOUT') {
+                        if (apiConfig.backup) {
+                            showToast("API call timed out. Switching to backup...", "warning");
+                            try {
+                                data = await attemptFetch(apiConfig.backup);
+                            } catch (backupErr) {
+                                if (backupErr.message === 'TIMEOUT') throw new Error("API call timed out.");
+                                throw backupErr;
+                            }
+                        } else {
+                            throw new Error("API call timed out.");
+                        }
+                    } else {
+                        throw err;
+                    }
+                }
+
                 if (data.error) throw new Error(data.error.message);
                 thinkingDiv.remove();
                 
@@ -416,7 +483,6 @@
                 renderChat(); 
                 renderSessionList();
 
-                // Trigger automatic recap if the history length is a multiple of 20
                 if (state.history.length > 0 && state.history.length % 20 === 0) {
                     generateRecap();
                 }
@@ -458,7 +524,7 @@
             renderChat(); 
             renderLoreList(); 
             $('ai-instruct-input').value = state.instructions || ""; 
-            $('story-recap-input').value = state.recap || ""; // Load recap
+            $('story-recap-input').value = state.recap || "";
             renderSessionList(); 
             if(window.innerWidth < 768) togglePanel(false); 
         }
@@ -473,7 +539,6 @@
             const original = sessions[id];
             if (!original) return;
             const newId = Date.now().toString();
-            // Deep clone the session object
             const copy = JSON.parse(JSON.stringify(original));
             copy.id = newId;
             copy.name = (copy.name || "Untitled") + " (Copy)";
@@ -520,7 +585,6 @@
         function saveModelSettings() { apiConfig.primary = $('primary-key-input').value; apiConfig.backup = $('backup-key-input').value; apiConfig.url = $('api-url-input').value; localStorage.setItem('cw_config', JSON.stringify(apiConfig)); showToast("Settings Saved", "success"); }
         function saveInstructions() { state.instructions = $('ai-instruct-input').value; saveState(); showToast("Updated Instructions", "success"); }
         
-        // Manual Recap Save Function
         function saveRecap() {
             state.recap = $('story-recap-input').value;
             saveState();
@@ -538,7 +602,6 @@
         tx.addEventListener("input", function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; }, false);
         tx.onkeydown = (e) => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
 
-        // Initialize Input Fields with saved apiConfig data to persist settings visibly
         $('api-url-input').value = apiConfig.url || '';
         $('primary-key-input').value = apiConfig.primary || '';
         $('backup-key-input').value = apiConfig.backup || '';
