@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.6.1 Lite</title>
+    <title>CWAI 1.6.1 Lite (Node Synced)</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
@@ -130,7 +130,7 @@
                 <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.6.1 Lite</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
-                    <span id="model-display-name">Gemini 3.1 Flash Lite</span>
+                    <span id="model-display-name">Cloud Synced</span>
                 </div>
             </div>
         </div>
@@ -178,23 +178,23 @@
             
             <div id="tab-model" class="space-y-6 fade-in">
                 <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition animate-pop-in">
-                    <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="ri-cpu-line"></i> Model Configuration</h3>
+                    <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="ri-cloud-line"></i> Node Secured API</h3>
                     <div class="space-y-3">
-                        <label class="text-[10px] text-gray-500 uppercase font-bold">API Endpoint URL</label>
-                        <input type="text" id="api-url-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-blue-200 font-mono focus:border-blue-500 outline-none transition" placeholder="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent">
+                        <label class="text-[10px] text-gray-500 uppercase font-bold">API Endpoint URL (Optional)</label>
+                        <input type="text" id="api-url-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-blue-200 font-mono focus:border-blue-500 outline-none transition" placeholder="URL will be handled by Node if left blank">
 
                         <label class="text-[10px] text-gray-500 uppercase font-bold mt-2 block">Primary API Key</label>
-                        <input type="password" id="primary-key-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white font-mono focus:border-blue-500 outline-none transition" placeholder="AIzaSy...">
+                        <input type="password" id="primary-key-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white font-mono focus:border-blue-500 outline-none transition" placeholder="Paste to send to backend">
                         
                         <label class="text-[10px] text-gray-500 uppercase font-bold mt-2 block">Backup API Key (Optional)</label>
-                        <input type="password" id="backup-key-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white font-mono focus:border-blue-500 outline-none transition" placeholder="AIzaSy...">
+                        <input type="password" id="backup-key-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white font-mono focus:border-blue-500 outline-none transition" placeholder="Paste to send to backend">
                         
-                        <button onclick="saveModelSettings()" class="w-full py-2.5 bg-blue-600/10 border border-blue-600/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-600 hover:text-white transition mt-2 btn-press shadow-sm">Save Settings</button>
+                        <button onclick="secureKeysInNode()" class="w-full py-2.5 bg-blue-600/10 border border-blue-600/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-600 hover:text-white transition mt-2 btn-press shadow-sm">Secure Keys & Use Node Sync</button>
                     </div>
                 </div>
                 
                 <div class="bg-blue-900/5 p-4 rounded-xl border border-blue-500/20 text-blue-300 text-[10px] italic leading-relaxed animate-fade-in">
-                    Tip: Use the Lore tab to set global AI instructions and manage your automated Story Recap.
+                    Tip: Keys are instantly erased from this interface and safely stored in your local Node.js environment.
                 </div>
             </div>
 
@@ -231,19 +231,18 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 pt-2">
-                    <button onclick="forceLoadPresets()" class="bg-indigo-900/20 hover:bg-indigo-900/40 text-indigo-300 py-3 rounded-xl text-xs font-medium border border-indigo-500/20 flex flex-col items-center gap-1 transition btn-press"><i class="ri-book-read-line text-lg"></i> Load Presets</button>
-                    <button onclick="copyToClipboard()" class="bg-green-900/20 hover:bg-green-900/40 text-green-300 py-3 rounded-xl text-xs font-medium border border-green-500/20 flex flex-col items-center gap-1 transition btn-press"><i class="ri-folders-line text-lg"></i> Backup All</button>
-                </div>
-                
-                <div class="bg-gray-900/40 p-3 rounded-xl border border-gray-800 animate-fade-in">
-                    <textarea id="import-area" class="w-full h-20 bg-black/50 text-[10px] text-gray-400 p-2 rounded mb-2 border border-gray-800" placeholder="Paste session/full backup JSON here..."></textarea>
-                    <button onclick="processImport()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded text-xs font-bold btn-press">Import Data</button>
+                    <button onclick="syncBackupToNode()" class="bg-blue-900/20 hover:bg-blue-900/40 text-blue-300 py-3 rounded-xl text-xs font-medium border border-blue-500/20 flex flex-col items-center gap-1 transition btn-press">
+                        <i class="ri-upload-cloud-2-line text-lg"></i> Backup to Node
+                    </button>
+                    <button onclick="restoreFromNode()" class="bg-green-900/20 hover:bg-green-900/40 text-green-300 py-3 rounded-xl text-xs font-medium border border-green-500/20 flex flex-col items-center gap-1 transition btn-press">
+                        <i class="ri-download-cloud-2-line text-lg"></i> Restore from Node
+                    </button>
                 </div>
 
-                <div class="bg-red-900/10 rounded-xl p-4 border border-red-900/20 animate-pop-in">
+                <div class="bg-red-900/10 rounded-xl p-4 border border-red-900/20 animate-pop-in mt-4">
                     <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ri-refresh-line"></i> System Reset</h3>
-                    <p class="text-[10px] text-gray-500 mb-3 leading-relaxed italic">Wipes all stored sessions, lore items, and API configurations permanently.</p>
-                    <button onclick="factoryReset()" class="w-full py-2 bg-red-900/20 border border-red-900/40 text-red-400 text-[10px] font-bold rounded-lg hover:bg-red-600 hover:text-white transition btn-press">Factory Reset</button>
+                    <p class="text-[10px] text-gray-500 mb-3 leading-relaxed italic">Wipes all stored sessions and lore from local browser memory.</p>
+                    <button onclick="factoryReset()" class="w-full py-2 bg-red-900/20 border border-red-900/40 text-red-400 text-[10px] font-bold rounded-lg hover:bg-red-600 hover:text-white transition btn-press">Factory Reset Local Cache</button>
                 </div>
             </div>
         </div>
@@ -272,8 +271,7 @@
 
         let sessions = JSON.parse(localStorage.getItem('cw_sessions')) || {};
         let activeId = localStorage.getItem('cw_active_id');
-        let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { primary: '', backup: '', url: '' };
-        const DEFAULT_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
+        let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { url: '' }; // Keys removed from local storage
 
         if (!activeId || !sessions[activeId]) {
             const newId = Date.now().toString();
@@ -305,9 +303,17 @@
             setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(), 300); }, 3000);
         }
 
+        // --- NEW: Standardize JSON Format for Universal Sync Compatibility ---
         function normalizeSession(sess) {
             if (!sess.history && sess.chatHistory) sess.history = sess.chatHistory;
             if (!sess.history) sess.history = [];
+            
+            // Convert old Lite Google format to Standard Format for Node Backend
+            sess.history = sess.history.map(m => {
+                if (m.parts) return { role: m.role === 'model' ? 'assistant' : m.role, content: m.parts[0].text };
+                return m;
+            });
+
             if (sess.aiInstructions && !sess.instructions) sess.instructions = sess.aiInstructions;
             if (sess.recap === undefined) sess.recap = "";
             if (!Array.isArray(sess.lore) && typeof sess.lore === 'object') {
@@ -329,7 +335,7 @@
             
             state.history.forEach(msg => {
                 const isUser = msg.role === 'user';
-                const text = msg.parts ? msg.parts[0].text : "";
+                const text = msg.content || "";
                 const div = document.createElement('div');
                 div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-enter-message mb-6`;
                 div.innerHTML = `<div class="max-w-[90%] md:max-w-[85%] px-5 py-3.5 text-sm shadow-md leading-relaxed ${isUser ? 'msg-user' : 'msg-ai'}"><div class="prose prose-invert">${isUser ? text : marked.parse(text)}</div></div>`;
@@ -347,7 +353,6 @@
         async function checkInternet() {
             if (!navigator.onLine) return false;
             try {
-                // Fetch the Google favicon with no-cors to test actual connectivity without CORS blocking
                 await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' });
                 return true;
             } catch (e) {
@@ -355,37 +360,101 @@
             }
         }
 
+        // --- UPDATED: Proxy calls to Node Backend ---
+        async function secureKeysInNode() {
+            const primary = $('primary-key-input').value.trim();
+            const backup = $('backup-key-input').value.trim();
+            const url = $('api-url-input').value.trim();
+            
+            try {
+                const res = await fetch('http://localhost:3000/api/set-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ primary, backup, targetModel: "gemini-2.5-flash-lite", endpoint: url, autoDetect: true })
+                });
+                
+                if(res.ok) {
+                    showToast("Keys securely stored in Node.", "success");
+                    $('primary-key-input').value = '';
+                    $('backup-key-input').value = '';
+                    apiConfig.url = url;
+                    localStorage.setItem('cw_config', JSON.stringify(apiConfig));
+                } else {
+                    showToast("Failed to connect to Node backend.", "error");
+                }
+            } catch(e) {
+                showToast("Connection Refused. Is Server Running?", "error");
+            }
+        }
+
+        async function syncBackupToNode() {
+            showToast("Backing up to Universal Folder...", "info");
+            try {
+                // Ensure all states are normalized to standard before backup
+                Object.keys(sessions).forEach(k => sessions[k] = normalizeSession(sessions[k]));
+                const payload = { sessions, currentSessionId: activeId, cloud: { endpoint: apiConfig.url } };
+                
+                const res = await fetch('http://localhost:3000/api/backup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if(res.ok) showToast("Universal Backup Successful!", "success");
+                else throw new Error("Server rejected backup.");
+            } catch(e) {
+                showToast("Node Backup Failed. Is Server Running?", "error");
+            }
+        }
+
+        async function restoreFromNode() {
+            showToast("Fetching Universal Backup...", "info");
+            try {
+                const res = await fetch('http://localhost:3000/api/restore');
+                if(!res.ok) throw new Error("Backup file not found.");
+                
+                const data = await res.json();
+                if(data && data.sessions) {
+                    // Load and normalize imported sessions
+                    sessions = data.sessions;
+                    Object.keys(sessions).forEach(k => sessions[k] = normalizeSession(sessions[k]));
+                    
+                    if(data.cloud) apiConfig.url = data.cloud.endpoint || apiConfig.url;
+                    
+                    loadSession(data.currentSessionId || Object.keys(sessions)[0]);
+                    saveState();
+                    showToast("Restore complete!", "success");
+                }
+            } catch(e) {
+                showToast("Failed to Restore. Is Server Running?", "error");
+            }
+        }
+
         async function generateRecap() {
             showToast("Saving Recap...", "info");
             
             const messagesToSummarize = state.history.slice(-20);
-            let textToSummarize = messagesToSummarize.map(m => `${m.role.toUpperCase()}: ${m.parts[0].text}`).join('\n\n');
+            let textToSummarize = messagesToSummarize.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
             
             const prompt = `Write a 1 or 2 paragraph recap of the following story events. Include important details, character actions, and context so the AI won't forget them.\n\nPrevious Recap Context: ${state.recap || "None."}\n\nNew Events to Summarize:\n${textToSummarize}`;
             
-            const payload = {
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            };
-            
             try {
-                const endpoint = apiConfig.url || DEFAULT_URL;
-                const response = await fetch(`${endpoint}?key=${apiConfig.primary}`, { 
+                const response = await fetch('http://localhost:3000/api/chat', { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
+                    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], temperature: 0.3 }) 
                 });
                 const data = await response.json();
                 
-                if (data.error) throw new Error(data.error.message);
+                if (data.error) throw new Error(data.error);
                 
-                state.recap = data.candidates[0].content.parts[0].text;
+                state.recap = data.reply;
                 $('story-recap-input').value = state.recap;
                 saveState();
                 showToast("Successfully saved!", "success");
                 
             } catch (err) {
                 console.error("Auto-Recap generation failed:", err);
-                showToast("Failed to generate recap", "error");
+                showToast("Failed to generate recap. Is Node Running?", "error");
             }
         }
 
@@ -395,7 +464,6 @@
             const text = textOverride || inputEl.value.trim();
             
             if (!text) return;
-            if (!apiConfig.primary && !apiConfig.backup) { togglePanel(true); switchTab('model'); showToast("API Key Required", "error"); return; }
             
             const isConnected = await checkInternet();
             if (!isConnected) {
@@ -403,7 +471,6 @@
                 return;
             }
 
-            // --- NEW: UI Lock to prevent duplicate API costs ---
             sendBtn.disabled = true;
             inputEl.disabled = true;
             sendBtn.innerHTML = '<i class="ri-loader-4-line text-xl animate-spin"></i>';
@@ -411,7 +478,7 @@
             sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             if (!textOverride) { inputEl.value = ''; inputEl.style.height = 'auto'; }
-            state.history.push({ role: 'user', parts: [{ text }] });
+            state.history.push({ role: 'user', content: text });
             renderChat();
             
             const container = $('chat-container');
@@ -421,14 +488,11 @@
             container.appendChild(thinkingDiv);
             scrollToBottom();
             
-            // --- NEW: Dynamic Comma-Separated Lore Injection ---
             let loreText = "";
             if (Array.isArray(state.lore)) {
                 state.lore.forEach(l => {
-                    // Split by comma, trim spaces, and escape regex characters safely
                     const aliases = l.name.split(',').map(n => n.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(n => n);
                     if (aliases.length > 0) {
-                        // Check if any alias exists as a whole word in the user's current message
                         const regex = new RegExp(`\\b(${aliases.join('|')})\\b`, 'i');
                         if (regex.test(text)) {
                             loreText += `${l.name}: ${l.description}\n`;
@@ -438,42 +502,11 @@
             }
             
             const recapText = state.recap ? `\nSTORY RECAP (Prior Events):\n${state.recap}\n` : "";
-            
-            // Only inject the 'Contextual Lore' section if a keyword actually triggered
             const systemText = `Instructions: ${state.instructions || "You are a helpful creative assistant."}\n${recapText}\n${loreText ? "Contextual Lore Triggered:\n" + loreText : ""}`;
 
             const contextWindow = state.history.slice(-20);
+            const msgs = [{ role: 'system', content: systemText }, ...contextWindow];
 
-            const payload = {
-                system_instruction: { parts: [{ text: systemText }] },
-                contents: contextWindow
-            };
-            
-            const attemptFetch = async (key) => {
-                const controller = new AbortController();
-                const waitToast = setTimeout(() => showToast("Please wait...", "info"), 15000);
-                const timeoutTimer = setTimeout(() => controller.abort(), 30000);
-                
-                try {
-                    const endpoint = apiConfig.url || DEFAULT_URL;
-                    const response = await fetch(`${endpoint}?key=${key}`, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(payload),
-                        signal: controller.signal
-                    });
-                    clearTimeout(waitToast);
-                    clearTimeout(timeoutTimer);
-                    return await response.json();
-                } catch (err) {
-                    clearTimeout(waitToast);
-                    clearTimeout(timeoutTimer);
-                    if (err.name === 'AbortError') throw new Error('TIMEOUT');
-                    throw err;
-                }
-            };
-
-            // --- NEW: Helper function to unlock the UI ---
             const resetUI = () => {
                 sendBtn.disabled = false;
                 inputEl.disabled = false;
@@ -484,34 +517,21 @@
             };
 
             try {
-                let data;
-                try {
-                    data = await attemptFetch(apiConfig.primary || "MISSING");
-                } catch (err) {
-                    if (err.message === 'TIMEOUT') {
-                        if (apiConfig.backup) {
-                            showToast("API call timed out. Switching to backup...", "warning");
-                            try {
-                                data = await attemptFetch(apiConfig.backup);
-                            } catch (backupErr) {
-                                if (backupErr.message === 'TIMEOUT') throw new Error("API call timed out.");
-                                throw backupErr;
-                            }
-                        } else {
-                            throw new Error("API call timed out.");
-                        }
-                    } else {
-                        throw err;
-                    }
-                }
+                const response = await fetch('http://localhost:3000/api/chat', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ messages: msgs, temperature: 0.7 }) 
+                });
+                const data = await response.json();
+                
+                if (data.error) throw new Error(data.error);
 
-                if (data.error) throw new Error(data.error.message);
                 thinkingDiv.remove();
                 
-                state.history.push({ role: 'model', parts: [{ text: data.candidates[0].content.parts[0].text }] });
+                state.history.push({ role: 'assistant', content: data.reply });
                 if (state.history.length === 2 && state.name === "New Story") state.name = text.substring(0, 30) + "...";
                 
-                resetUI(); // Unlock UI on success
+                resetUI(); 
                 saveState(); 
                 renderChat(); 
                 renderSessionList();
@@ -524,8 +544,8 @@
                 thinkingDiv.remove(); 
                 state.history.pop(); 
                 renderChat();
-                resetUI(); // Unlock UI on error
-                showToast(err.message, "error");
+                resetUI(); 
+                showToast("Chat failed. Is Node Server Running?", "error");
             }
         }
 
@@ -587,7 +607,7 @@
         function factoryReset() {
             openConfirmModal(
                 "Factory Reset?", 
-                "This will permanently delete all your stories, lore items, and API configurations. You cannot undo this.", 
+                "This will permanently delete local browser data. If backed up to Node, you can restore later.", 
                 () => {
                     localStorage.removeItem('cw_sessions');
                     localStorage.removeItem('cw_active_id');
@@ -618,17 +638,8 @@
         function deleteLore(i) { state.lore.splice(i, 1); saveState(); renderLoreList(); }
         function editLore(i) { const item = state.lore[i]; $('lore-name-input').value = item.name; $('lore-desc-input').value = item.description; deleteLore(i); showToast("Loaded for editing", "info"); }
 
-        function saveModelSettings() { apiConfig.primary = $('primary-key-input').value; apiConfig.backup = $('backup-key-input').value; apiConfig.url = $('api-url-input').value; localStorage.setItem('cw_config', JSON.stringify(apiConfig)); showToast("Settings Saved", "success"); }
         function saveInstructions() { state.instructions = $('ai-instruct-input').value; saveState(); showToast("Updated Instructions", "success"); }
-        
-        function saveRecap() {
-            state.recap = $('story-recap-input').value;
-            saveState();
-            showToast("Successfully saved!", "success");
-        }
-
-        function copyToClipboard() { navigator.clipboard.writeText(JSON.stringify(sessions, null, 2)).then(() => showToast("Full Backup Copied", "success")); }
-        function processImport() { try { const raw = $('import-area').value.trim(); if(!raw) return; const data = JSON.parse(raw); if(data.id) sessions[data.id] = normalizeSession(data); else Object.keys(data).forEach(k => sessions[k] = normalizeSession(data[k])); saveState(); renderSessionList(); $('import-area').value = ''; showToast("Imported data", "success"); } catch(e) { showToast("Invalid JSON", "error"); } }
+        function saveRecap() { state.recap = $('story-recap-input').value; saveState(); showToast("Successfully saved!", "success"); }
 
         window.togglePanel = (show) => { const p = $('control-panel'), b = $('panel-backdrop'); if(show) { b.classList.remove('hidden'); setTimeout(()=> { b.classList.add('opacity-100'); p.classList.remove('closed'); p.classList.add('open'); }, 10); } else { b.classList.remove('opacity-100'); p.classList.remove('open'); p.classList.add('closed'); setTimeout(()=>b.classList.add('hidden'), 300); } };
         function switchTab(tabName) { document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('text-blue-400', 'active-tab'); b.classList.add('text-gray-500'); if(b.dataset.tab===tabName) b.classList.add('text-blue-400', 'active-tab'); }); ['model','lore','data'].forEach(t => $(`tab-${t}`).classList.add('hidden')); $(`tab-${tabName}`).classList.remove('hidden'); }
@@ -644,9 +655,9 @@
         };
 
         $('api-url-input').value = apiConfig.url || '';
-        $('primary-key-input').value = apiConfig.primary || '';
-        $('backup-key-input').value = apiConfig.backup || '';
 
+        // Initialize state format seamlessly
+        state = normalizeSession(state);
         loadSession(activeId);
     </script>
 </body>
