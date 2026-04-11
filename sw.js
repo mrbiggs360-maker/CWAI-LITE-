@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cwai-lite-v1.6';
+const CACHE_NAME = 'cwai-lite-v1.6.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
