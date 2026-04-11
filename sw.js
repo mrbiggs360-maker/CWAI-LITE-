@@ -35,8 +35,9 @@ self.addEventListener('activate', event => {
 
 // Fetch Event: Network First strategy (Fallback to cache)
 self.addEventListener('fetch', event => {
-  // Do not try to cache API calls to the generative AI models
-  if (event.request.url.includes('generativelanguage.googleapis.com')) {
+  // Do not try to cache API calls to generative AI models OR the local Node.js backend
+  if (event.request.url.includes('generativelanguage.googleapis.com') || 
+      event.request.url.includes('localhost:3000')) {
     return;
   }
 
