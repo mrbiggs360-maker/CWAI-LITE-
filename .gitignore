@@ -1,0 +1,7 @@
+# Local Backups & Data
+CWAIUBackup/
+universal_state.json
+secure_keys.json
+
+# Node modules
+node_modules/
