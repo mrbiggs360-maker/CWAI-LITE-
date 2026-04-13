@@ -1,12 +1,12 @@
 {
-  "name": "CWAI 1.6.1 Lite",
+  "name": "CWAI 1.6.2 Lite",
   "short_name": "CWAI Lite",
   "start_url": "./index.html",
   "id": "/",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#2563eb",
-  "description": "Lightweight Gemini API Storytelling Interface v1.6.1 with Auto-Recap and Connection Monitoring",
+  "description": "Lightweight Gemini API Storytelling Interface v1.6.2 with Auto-Recap and Connection Monitoring",
   "orientation": "portrait-primary",
   "categories": [
     "entertainment",
