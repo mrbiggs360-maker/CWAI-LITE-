@@ -1,9 +1,10 @@
+html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.6.1 Lite</title>
+    <title>CWAI 1.6.2 Lite</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
@@ -101,7 +102,7 @@
         .logo-container:active { transform: scale(0.92); }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col relative bg-black selection:bg-blue-500/30 selection:text-blue-200">
+<body class="h-[100dvh] w-full flex flex-col relative bg-black selection:bg-blue-500/30 selection:text-blue-200">
 
     <div id="modal-backdrop" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden transition-opacity duration-300 items-center justify-center p-6 opacity-0">
         <div class="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-pop-in">
@@ -115,7 +116,7 @@
         </div>
     </div>
 
-    <div id="main-header" class="fixed top-0 left-0 right-0 h-14 glass z-20 flex items-center justify-between px-4 border-b border-gray-800 transition-transform duration-300">
+    <div id="main-header" class="fixed top-0 left-0 right-0 h-14 glass z-20 flex items-center justify-between px-5 border-b border-gray-800 transition-transform duration-300">
         <div class="flex items-center gap-3">
             <div class="logo-container" onclick="togglePanel(true)">
                  <svg viewBox="0 0 100 100" class="w-6 h-6 text-white drop-shadow-md" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
@@ -127,7 +128,7 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.6.1 Lite</h1>
+                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.6.2 Lite</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
                     <span id="model-display-name">Gemini 3.1 Flash Lite</span>
@@ -140,10 +141,10 @@
         </div>
     </div>
 
-    <div id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-36 px-4 md:px-0 max-w-3xl mx-auto w-full space-y-6 custom-scroll scroll-smooth">
+    <div id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-40 px-5 max-w-3xl mx-auto w-full space-y-6 custom-scroll scroll-smooth">
     </div>
 
-    <div class="fixed bottom-0 left-0 right-0 glass-heavy border-t border-gray-800 p-3 pb-5 z-20">
+    <div class="fixed bottom-0 left-0 right-0 glass-heavy border-t border-gray-800 px-5 pt-3 pb-6 z-20">
         <div class="max-w-3xl mx-auto flex flex-col gap-3">
             <div class="flex justify-center gap-6 pb-1 opacity-60 hover:opacity-100 transition duration-300">
                 <button onclick="sendMessage('Suggest a creative idea')" class="text-[10px] text-gray-400 hover:text-purple-400 uppercase font-bold tracking-widest flex items-center gap-1.5 hover-lift btn-press"><i class="ri-lightbulb-flash-line"></i> Idea</button>
@@ -323,7 +324,7 @@
             const container = $('chat-container');
             container.innerHTML = '';
             if (!state.history || state.history.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.6.1 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.6.2 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
                 return;
             }
             
@@ -403,7 +404,7 @@
                 return;
             }
 
-            // --- NEW: UI Lock to prevent duplicate API costs ---
+            // UI Lock to prevent duplicate API costs
             sendBtn.disabled = true;
             inputEl.disabled = true;
             sendBtn.innerHTML = '<i class="ri-loader-4-line text-xl animate-spin"></i>';
@@ -421,14 +422,12 @@
             container.appendChild(thinkingDiv);
             scrollToBottom();
             
-            // --- NEW: Dynamic Comma-Separated Lore Injection ---
+            // Dynamic Comma-Separated Lore Injection
             let loreText = "";
             if (Array.isArray(state.lore)) {
                 state.lore.forEach(l => {
-                    // Split by comma, trim spaces, and escape regex characters safely
                     const aliases = l.name.split(',').map(n => n.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(n => n);
                     if (aliases.length > 0) {
-                        // Check if any alias exists as a whole word in the user's current message
                         const regex = new RegExp(`\\b(${aliases.join('|')})\\b`, 'i');
                         if (regex.test(text)) {
                             loreText += `${l.name}: ${l.description}\n`;
@@ -439,10 +438,9 @@
             
             const recapText = state.recap ? `\nSTORY RECAP (Prior Events):\n${state.recap}\n` : "";
             
-            // Only inject the 'Contextual Lore' section if a keyword actually triggered
             const systemText = `Instructions: ${state.instructions || "You are a helpful creative assistant."}\n${recapText}\n${loreText ? "Contextual Lore Triggered:\n" + loreText : ""}`;
 
-            const contextWindow = state.history.slice(-20);
+            const contextWindow = state.history.slice(-40);
 
             const payload = {
                 system_instruction: { parts: [{ text: systemText }] },
@@ -473,7 +471,6 @@
                 }
             };
 
-            // --- NEW: Helper function to unlock the UI ---
             const resetUI = () => {
                 sendBtn.disabled = false;
                 inputEl.disabled = false;
@@ -511,7 +508,7 @@
                 state.history.push({ role: 'model', parts: [{ text: data.candidates[0].content.parts[0].text }] });
                 if (state.history.length === 2 && state.name === "New Story") state.name = text.substring(0, 30) + "...";
                 
-                resetUI(); // Unlock UI on success
+                resetUI(); 
                 saveState(); 
                 renderChat(); 
                 renderSessionList();
@@ -524,7 +521,12 @@
                 thinkingDiv.remove(); 
                 state.history.pop(); 
                 renderChat();
-                resetUI(); // Unlock UI on error
+                resetUI(); 
+                
+                inputEl.value = text;
+                inputEl.style.height = 'auto';
+                inputEl.style.height = (inputEl.scrollHeight) + 'px';
+                
                 showToast(err.message, "error");
             }
         }
