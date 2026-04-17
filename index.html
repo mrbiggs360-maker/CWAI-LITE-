@@ -1,10 +1,9 @@
-html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.6.2 Lite</title>
+    <title>CWAI 1.7.2 Lite</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
@@ -128,7 +127,7 @@ html
                 </svg>
             </div>
             <div>
-                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.6.2 Lite</h1>
+                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.7.2 Lite</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
                     <span id="model-display-name">Gemini 3.1 Flash Lite</span>
@@ -202,6 +201,17 @@ html
             <div id="tab-lore" class="hidden space-y-4 fade-in">
                 
                 <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition animate-pop-in">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xs font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2"><i class="ri-fish-line"></i> Goldfish Mode</h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="goldfish-toggle" class="sr-only peer" onchange="toggleGoldfishMode(this.checked)">
+                            <div class="w-9 h-5 bg-black/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-500/80 peer-checked:after:bg-white border border-gray-700"></div>
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-gray-500 leading-relaxed">When enabled, the chat log is never sent to the AI. Only the current message, lore, and AI instructions are sent.</p>
+                </div>
+
+                <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition animate-pop-in">
                     <h3 class="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i class="ri-history-line"></i> Story Recap</h3>
                     <p class="text-[10px] text-gray-500 mb-2 leading-relaxed">The AI automatically summarizes your past 20 messages here to remember older context while keeping API costs low.</p>
                     <textarea id="story-recap-input" class="w-full h-32 bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white resize-none focus:border-green-500 outline-none transition custom-scroll" placeholder="Story recap will appear here..."></textarea>
@@ -274,11 +284,12 @@ html
         let sessions = JSON.parse(localStorage.getItem('cw_sessions')) || {};
         let activeId = localStorage.getItem('cw_active_id');
         let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { primary: '', backup: '', url: '' };
+        let lastApiCallTime = parseInt(localStorage.getItem('cw_last_api_call')) || 0;
         const DEFAULT_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
 
         if (!activeId || !sessions[activeId]) {
             const newId = Date.now().toString();
-            sessions[newId] = { id: newId, name: "New Story", history: [], lore: [], instructions: "", recap: "" };
+            sessions[newId] = { id: newId, name: "New Story", history: [], lore: [], instructions: "", recap: "", goldfishMode: false, lastUpdated: Date.now() };
             activeId = newId;
         }
         let state = sessions[activeId];
@@ -311,6 +322,8 @@ html
             if (!sess.history) sess.history = [];
             if (sess.aiInstructions && !sess.instructions) sess.instructions = sess.aiInstructions;
             if (sess.recap === undefined) sess.recap = "";
+            if (sess.goldfishMode === undefined) sess.goldfishMode = false;
+            if (!sess.lastUpdated) sess.lastUpdated = parseInt(sess.id) || Date.now();
             if (!Array.isArray(sess.lore) && typeof sess.lore === 'object') {
                 let arr = [];
                 Object.values(sess.lore).forEach(v => { if (Array.isArray(v)) arr.push(...v); });
@@ -324,7 +337,7 @@ html
             const container = $('chat-container');
             container.innerHTML = '';
             if (!state.history || state.history.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.6.2 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.7.2 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
                 return;
             }
             
@@ -398,6 +411,13 @@ html
             if (!text) return;
             if (!apiConfig.primary && !apiConfig.backup) { togglePanel(true); switchTab('model'); showToast("API Key Required", "error"); return; }
             
+            const now = Date.now();
+            if (now - lastApiCallTime < 15000) {
+                const remaining = Math.ceil((15000 - (now - lastApiCallTime)) / 1000);
+                showToast(`Cooldown: Please wait ${remaining}s before sending.`, "warning");
+                return;
+            }
+
             const isConnected = await checkInternet();
             if (!isConnected) {
                 showToast("No internet connection.", "error");
@@ -436,11 +456,19 @@ html
                 });
             }
             
-            const recapText = state.recap ? `\nSTORY RECAP (Prior Events):\n${state.recap}\n` : "";
+            // If Goldfish mode is active, do not pass recap in system text.
+            const recapText = (!state.goldfishMode && state.recap) ? `\nSTORY RECAP (Prior Events):\n${state.recap}\n` : "";
             
             const systemText = `Instructions: ${state.instructions || "You are a helpful creative assistant."}\n${recapText}\n${loreText ? "Contextual Lore Triggered:\n" + loreText : ""}`;
 
-            const contextWindow = state.history.slice(-40);
+            // Handle Context Window limits based on Goldfish mode
+            let contextWindow;
+            if (state.goldfishMode) {
+                // In Goldfish mode, only send the current user message
+                contextWindow = [state.history[state.history.length - 1]];
+            } else {
+                contextWindow = state.history.slice(-40);
+            }
 
             const payload = {
                 system_instruction: { parts: [{ text: systemText }] },
@@ -480,6 +508,10 @@ html
                 inputEl.focus();
             };
 
+            // Set last Api Call time directly before the API calls attempt
+            lastApiCallTime = Date.now();
+            localStorage.setItem('cw_last_api_call', lastApiCallTime);
+
             try {
                 let data;
                 try {
@@ -513,7 +545,8 @@ html
                 renderChat(); 
                 renderSessionList();
 
-                if (state.history.length > 0 && state.history.length % 20 === 0) {
+                // Only generate recap if we aren't in goldfish mode limiting the context
+                if (!state.goldfishMode && state.history.length > 0 && state.history.length % 20 === 0) {
                     generateRecap();
                 }
                 
@@ -523,20 +556,29 @@ html
                 renderChat();
                 resetUI(); 
                 
-                inputEl.value = text;
-                inputEl.style.height = 'auto';
-                inputEl.style.height = (inputEl.scrollHeight) + 'px';
+                // Return text to the textbox so the user does not have to rewrite it.
+                if (!textOverride) {
+                    inputEl.value = text;
+                    inputEl.style.height = 'auto';
+                    inputEl.style.height = (inputEl.scrollHeight) + 'px';
+                }
                 
                 showToast(err.message, "error");
             }
         }
 
-        function saveState() { sessions[activeId] = state; localStorage.setItem('cw_sessions', JSON.stringify(sessions)); localStorage.setItem('cw_active_id', activeId); }
+        function saveState() { 
+            state.lastUpdated = Date.now();
+            sessions[activeId] = state; 
+            localStorage.setItem('cw_sessions', JSON.stringify(sessions)); 
+            localStorage.setItem('cw_active_id', activeId); 
+        }
 
         function renderSessionList() {
             const list = $('session-list');
             list.innerHTML = '';
-            Object.values(sessions).sort((a,b) => (b.id||0) - (a.id||0)).forEach(s => {
+            // Sort by most recent interaction (lastUpdated), falling back to id creation time.
+            Object.values(sessions).sort((a,b) => (b.lastUpdated || parseInt(b.id) || 0) - (a.lastUpdated || parseInt(a.id) || 0)).forEach(s => {
                 const isActive = s.id === activeId;
                 const d = document.createElement('div');
                 d.className = `p-3 rounded-xl flex justify-between items-center cursor-pointer mb-2 transition group animate-pop-in ${isActive ? 'bg-blue-600/20 border border-blue-500/30' : 'hover:bg-gray-800 border border-transparent'}`;
@@ -563,11 +605,15 @@ html
             renderLoreList(); 
             $('ai-instruct-input').value = state.instructions || ""; 
             $('story-recap-input').value = state.recap || "";
+            
+            const gfToggle = $('goldfish-toggle');
+            if (gfToggle) gfToggle.checked = state.goldfishMode;
+            
             renderSessionList(); 
             if(window.innerWidth < 768) togglePanel(false); 
         }
 
-        function createNewSession() { const id = Date.now().toString(); sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "" }; loadSession(id); showToast("New story started", "success"); }
+        function createNewSession() { const id = Date.now().toString(); sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "", goldfishMode: false, lastUpdated: Date.now() }; loadSession(id); showToast("New story started", "success"); }
 
         function deleteSession(id) { if(Object.keys(sessions).length <= 1) return showToast("Keep at least one story", "error"); openConfirmModal("Delete Story?", "Erase history and lore permanently?", () => { delete sessions[id]; if(activeId === id) loadSession(Object.keys(sessions)[0]); else { saveState(); renderSessionList(); } }); }
 
@@ -580,6 +626,7 @@ html
             const copy = JSON.parse(JSON.stringify(original));
             copy.id = newId;
             copy.name = (copy.name || "Untitled") + " (Copy)";
+            copy.lastUpdated = Date.now();
             sessions[newId] = normalizeSession(copy);
             saveState();
             renderSessionList();
@@ -594,9 +641,16 @@ html
                     localStorage.removeItem('cw_sessions');
                     localStorage.removeItem('cw_active_id');
                     localStorage.removeItem('cw_config');
+                    localStorage.removeItem('cw_last_api_call');
                     location.reload();
                 }
             );
+        }
+
+        function toggleGoldfishMode(enabled) {
+            state.goldfishMode = enabled;
+            saveState();
+            showToast(enabled ? "Goldfish Mode Enabled" : "Goldfish Mode Disabled", enabled ? "warning" : "info");
         }
 
         let modalCallback = null;
