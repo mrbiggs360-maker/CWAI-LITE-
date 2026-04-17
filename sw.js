@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cwai-lite-v1.6.2';
+const CACHE_NAME = 'cwai-lite-v1.7.2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -35,9 +35,8 @@ self.addEventListener('activate', event => {
 
 // Fetch Event: Network First strategy (Fallback to cache)
 self.addEventListener('fetch', event => {
-  // Do not try to cache API calls to generative AI models OR the local Node.js backend
-  if (event.request.url.includes('generativelanguage.googleapis.com') || 
-      event.request.url.includes('localhost:3000')) {
+  // Do not try to cache API calls to generative AI models
+  if (event.request.url.includes('generativelanguage.googleapis.com')) {
     return;
   }
 
@@ -53,3 +52,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
