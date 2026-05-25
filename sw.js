@@ -1,22 +1,19 @@
-const CACHE_NAME = 'cwai-lite-v1.7.2';
+const CACHE_NAME = 'cwai-lite-v1.8.3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json'
 ];
 
-// Install Event: Cache essential files for basic offline loading
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  // Force the waiting service worker to become the active service worker
   self.skipWaiting();
 });
 
-// Activate Event: Clean up old caches if the version changes
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -29,27 +26,24 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  // Claim control instantly
   self.clients.claim();
 });
 
-// Fetch Event: Network First strategy (Fallback to cache)
 self.addEventListener('fetch', event => {
-  // Do not try to cache API calls to generative AI models
-  if (event.request.url.includes('generativelanguage.googleapis.com')) {
+  if (event.request.url.includes('generativelanguage.googleapis.com') || 
+      event.request.url.includes('openrouter.ai') || 
+      event.request.url.includes('api.openai.com') || 
+      event.request.url.includes('api.deepseek.com')) {
     return;
   }
 
-  // Also skip caching for our Google favicon internet check
   if (event.request.url.includes('favicon.ico')) {
       return;
   }
 
   event.respondWith(
     fetch(event.request).catch(() => {
-      // If the network fails, pull the matched item from the cache
       return caches.match(event.request);
     })
   );
 });
-
