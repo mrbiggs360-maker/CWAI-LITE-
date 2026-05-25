@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.7.2 Lite</title>
+    <title>CWAI 1.8.3 Lite</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
@@ -124,13 +124,13 @@
                     <path d="M56 32 L56 68" />
                     <path d="M56 32 C56 24, 72 24, 72 40 C72 48, 64 50, 64 50 C64 50, 72 52, 72 60 C72 76, 56 76, 56 68" />
                     <path d="M44 50 L56 50" stroke-width="8" />
-                </svg>
+                 </svg>
             </div>
             <div>
-                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.7.2 Lite</h1>
+                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.8.3 Lite</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
-                    <span id="model-display-name">Gemini 3.1 Flash Lite</span>
+                    <span id="model-display-name">Loading Provider...</span>
                 </div>
             </div>
         </div>
@@ -180,14 +180,27 @@
                 <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition animate-pop-in">
                     <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="ri-cpu-line"></i> Model Configuration</h3>
                     <div class="space-y-3">
-                        <label class="text-[10px] text-gray-500 uppercase font-bold">API Endpoint URL</label>
-                        <input type="text" id="api-url-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-blue-200 font-mono focus:border-blue-500 outline-none transition" placeholder="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent">
-
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mt-2 block">Primary API Key</label>
-                        <input type="password" id="primary-key-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white font-mono focus:border-blue-500 outline-none transition" placeholder="AIzaSy...">
+                        <label class="text-[10px] text-gray-500 uppercase font-bold block pl-1">Primary API Key</label>
+                        <input type="password" id="primary-key-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white font-mono focus:border-blue-500 outline-none transition" placeholder="Paste key to auto-detect...">
                         
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mt-2 block">Backup API Key (Optional)</label>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold block pl-1">Backup API Key (Optional)</label>
                         <input type="password" id="backup-key-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white font-mono focus:border-blue-500 outline-none transition" placeholder="AIzaSy...">
+
+                        <label class="text-[10px] text-gray-500 uppercase font-bold block pl-1">Platform Provider</label>
+                        <div class="grid grid-cols-2 gap-2" id="prov-grid"></div>
+
+                        <div class="pt-1 flex flex-col gap-1">
+                            <span class="text-[9px] text-gray-500 uppercase tracking-wider pl-1">API Endpoint URL</span>
+                            <input type="text" id="api-url-input" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-blue-200 font-mono focus:border-blue-500 outline-none transition" placeholder="...">
+                        </div>
+
+                        <div class="flex flex-col border border-gray-800 rounded-xl p-2.5 bg-black/20 mt-1">
+                            <div class="flex justify-between items-center mb-1.5 px-1">
+                                <label class="text-[10px] font-bold text-gray-400 tracking-wide uppercase">Active Model</label>
+                                <span id="sync-status" class="text-[9px] font-bold text-gray-500">Static</span>
+                            </div>
+                            <div class="max-h-[120px] overflow-y-auto custom-scroll grid grid-cols-1 gap-1 p-1 border border-gray-800 rounded-lg bg-gray-950/40" id="model-list-box"></div>
+                        </div>
                         
                         <button onclick="saveModelSettings()" class="w-full py-2.5 bg-blue-600/10 border border-blue-600/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-600 hover:text-white transition mt-2 btn-press shadow-sm">Save Settings</button>
                     </div>
@@ -263,7 +276,6 @@
     <div id="toast-container" class="fixed top-20 right-4 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
-        // Online/Offline Event Listeners
         window.addEventListener('offline', () => {
             showToast("You are offline. Please check your connection.", "error");
         });
@@ -272,7 +284,6 @@
             showToast("Connection restored!", "success");
         });
 
-        // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -281,11 +292,22 @@
             });
         }
 
+        const PROVIDERS = {
+            google: { url: "https://generativelanguage.googleapis.com/v1beta/models", models: ["gemini-2.5-flash", "gemini-2.0-flash-lite-preview-02-05", "gemini-1.5-flash", "gemini-1.5-pro"] },
+            openrouter: { url: "https://openrouter.ai/api/v1/chat/completions", models: ["google/gemini-2.0-flash-001", "meta-llama/llama-3.2-3b-instruct", "anthropic/claude-3.5-haiku"] },
+            openai: { url: "https://api.openai.com/v1/chat/completions", models: ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"] },
+            deepseek: { url: "https://api.deepseek.com/chat/completions", models: ["deepseek-chat", "deepseek-coder"] }
+        };
+
         let sessions = JSON.parse(localStorage.getItem('cw_sessions')) || {};
         let activeId = localStorage.getItem('cw_active_id');
-        let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { primary: '', backup: '', url: '' };
+        let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { primary: '', backup: '', url: '', provider: 'google', model: 'gemini-2.0-flash-lite-preview-02-05', cachedModels: {}, lastSync: {} };
         let lastApiCallTime = parseInt(localStorage.getItem('cw_last_api_call')) || 0;
-        const DEFAULT_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
+        
+        if (!apiConfig.provider) apiConfig.provider = 'google';
+        if (!apiConfig.model) apiConfig.model = 'gemini-2.0-flash-lite-preview-02-05';
+        if (!apiConfig.cachedModels) apiConfig.cachedModels = {};
+        if (!apiConfig.lastSync) apiConfig.lastSync = {};
 
         if (!activeId || !sessions[activeId]) {
             const newId = Date.now().toString();
@@ -317,6 +339,121 @@
             setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(), 300); }, 3000);
         }
 
+        function detectProviderPattern(key) {
+            if(key.startsWith("AIza")) return "google";
+            if(key.startsWith("sk-or-")) return "openrouter";
+            if(key.startsWith("sk-proj-") || (key.startsWith("sk-") && key.length > 40)) return "openai";
+            if(key.startsWith("sk-")) return "deepseek";
+            return apiConfig.provider;
+        }
+
+        async function detectAndAutoSync(key) {
+            if(!key) return;
+            let detected = detectProviderPattern(key);
+            apiConfig.provider = detected;
+            apiConfig.url = PROVIDERS[detected].url;
+            $('api-url-input').value = apiConfig.url;
+            localStorage.setItem('cw_config', JSON.stringify(apiConfig));
+            renderProviderGrid();
+            await triggerCloudSync(detected, key);
+        }
+
+        async function triggerCloudSync(prov, key) {
+            if(!key || prov === "deepseek") return;
+            let now = Date.now();
+            if(now - (apiConfig.lastSync[prov] || 0) < 3600000 && apiConfig.cachedModels[prov]?.length) {
+                renderModelList();
+                return;
+            }
+            fontStatus("Syncing...", "text-yellow-400");
+            try {
+                let fetchedIds = [];
+                if(prov === "openrouter") {
+                    let res = await fetch("https://openrouter.ai/api/v1/models", { headers: { Authorization: `Bearer ${key}` } });
+                    let json = await res.json();
+                    fetchedIds = json.data.map(m => m.id);
+                } else if(prov === "google") {
+                    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                    let json = await res.json();
+                    fetchedIds = json.models.map(m => m.name.replace("models/", ""));
+                } else if(prov === "openai") {
+                    let res = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: `Bearer ${key}` } });
+                    let json = await res.json();
+                    fetchedIds = json.data.map(m => m.id);
+                }
+                if(fetchedIds && fetchedIds.length) {
+                    apiConfig.cachedModels[prov] = fetchedIds;
+                    apiConfig.lastSync[prov] = now;
+                    localStorage.setItem('cw_config', JSON.stringify(apiConfig));
+                    if(!fetchedIds.includes(apiConfig.model)) apiConfig.model = fetchedIds[0];
+                    localStorage.setItem('cw_config', JSON.stringify(apiConfig));
+                    fontStatus("Synced", "text-green-400");
+                } else {
+                    fontStatus("Static", "text-gray-500");
+                }
+            } catch(e) {
+                console.error(e);
+                fontStatus("Sync Failed", "text-red-400");
+            }
+            renderModelList();
+            updateModelHeaderDisplay();
+        }
+
+        function fontStatus(text, cls) {
+            let s = $("sync-status");
+            if(s) {
+                s.innerText = text;
+                s.className = `text-[9px] font-bold ${cls}`;
+            }
+        }
+
+        function renderProviderGrid() {
+            let g = $("prov-grid");
+            g.innerHTML = "";
+            Object.keys(PROVIDERS).forEach(p => {
+                let b = document.createElement("button");
+                b.className = `py-1.5 px-2 rounded-xl text-[11px] font-bold text-center border transition-all btn-press ${apiConfig.provider === p ? 'bg-blue-600/20 border-blue-500/50 text-blue-400' : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-gray-200'}`;
+                b.innerText = p.toUpperCase();
+                b.onclick = () => {
+                    apiConfig.provider = p;
+                    let defaults = apiConfig.cachedModels[p]?.length ? apiConfig.cachedModels[p] : PROVIDERS[p].models;
+                    apiConfig.model = defaults[0] || "";
+                    apiConfig.url = PROVIDERS[p].url;
+                    $('api-url-input').value = apiConfig.url;
+                    localStorage.setItem('cw_config', JSON.stringify(apiConfig));
+                    renderProviderGrid();
+                    renderModelList();
+                    updateModelHeaderDisplay();
+                    if(apiConfig.primary) triggerCloudSync(p, apiConfig.primary);
+                };
+                g.appendChild(b);
+            });
+            $("api-url-input").value = apiConfig.url || PROVIDERS[apiConfig.provider].url;
+        }
+
+        function renderModelList() {
+            let box = $("model-list-box");
+            box.innerHTML = "";
+            let list = apiConfig.cachedModels[apiConfig.provider]?.length ? apiConfig.cachedModels[apiConfig.provider] : PROVIDERS[apiConfig.provider].models;
+            list.forEach(m => {
+                let b = document.createElement("button");
+                b.className = `text-left px-2 py-1.5 text-[11px] font-medium border-b border-gray-800/60 truncate w-full transition ${apiConfig.model === m ? 'bg-blue-600/20 text-blue-400 font-bold' : 'text-gray-300 hover:bg-white/5 active:bg-white/10'}`;
+                b.innerText = m;
+                b.onclick = () => {
+                    apiConfig.model = m;
+                    localStorage.setItem('cw_config', JSON.stringify(apiConfig));
+                    renderModelList();
+                    updateModelHeaderDisplay();
+                };
+                box.appendChild(b);
+            });
+        }
+
+        function updateModelHeaderDisplay() {
+            let d = $("model-display-name");
+            if(d) d.innerText = `${apiConfig.provider.toUpperCase()}: ${apiConfig.model}`;
+        }
+
         function normalizeSession(sess) {
             if (!sess.history && sess.chatHistory) sess.history = sess.chatHistory;
             if (!sess.history) sess.history = [];
@@ -337,13 +474,13 @@
             const container = $('chat-container');
             container.innerHTML = '';
             if (!state.history || state.history.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.7.2 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.8.3 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
                 return;
             }
             
             state.history.forEach(msg => {
                 const isUser = msg.role === 'user';
-                const text = msg.parts ? msg.parts[0].text : "";
+                const text = msg.parts ? msg.parts[0].text : msg.text || "";
                 const div = document.createElement('div');
                 div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-enter-message mb-6`;
                 div.innerHTML = `<div class="max-w-[90%] md:max-w-[85%] px-5 py-3.5 text-sm shadow-md leading-relaxed ${isUser ? 'msg-user' : 'msg-ai'}"><div class="prose prose-invert">${isUser ? text : marked.parse(text)}</div></div>`;
@@ -361,7 +498,6 @@
         async function checkInternet() {
             if (!navigator.onLine) return false;
             try {
-                // Fetch the Google favicon with no-cors to test actual connectivity without CORS blocking
                 await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' });
                 return true;
             } catch (e) {
@@ -369,34 +505,73 @@
             }
         }
 
+        function buildUrl(prov, model, key, customUrl) {
+            let base = customUrl || PROVIDERS[prov].url;
+            if (prov === "google") {
+                if (base.includes(":generateContent")) return `${base}?key=${key}`;
+                return `${base}/${model}:generateContent?key=${key}`;
+            }
+            return base;
+        }
+
+        function buildHeaders(prov, key) {
+            let h = { "Content-Type": "application/json" };
+            if (prov !== "google") h["Authorization"] = `Bearer ${key}`;
+            if (prov === "openrouter") {
+                h["HTTP-Referer"] = window.location.href;
+                h["X-Title"] = "CWAI 1.8.3 Lite";
+            }
+            return h;
+        }
+
+        function extractTxt(prov, json) {
+            try {
+                if (prov === "google") return json.candidates[0].content.parts[0].text;
+                return json.choices[0].message.content;
+            } catch (e) {
+                return null;
+            }
+        }
+
         async function generateRecap() {
             showToast("Saving Recap...", "info");
             
             const messagesToSummarize = state.history.slice(-20);
-            let textToSummarize = messagesToSummarize.map(m => `${m.role.toUpperCase()}: ${m.parts[0].text}`).join('\n\n');
-            
+            let textToSummarize = messagesToSummarize.map(m => `${m.role.toUpperCase()}: ${m.parts ? m.parts[0].text : m.text}`).join('\n\n');
             const prompt = `Write a 1 or 2 paragraph recap of the following story events. Include important details, character actions, and context so the AI won't forget them.\n\nPrevious Recap Context: ${state.recap || "None."}\n\nNew Events to Summarize:\n${textToSummarize}`;
             
-            const payload = {
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            };
+            let recapBody;
+            if (apiConfig.provider === "google") {
+                recapBody = {
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    system_instruction: { parts: [{ text: "Provide a rolling summary of the conversation history to act as a memory aid." }] }
+                };
+            } else {
+                recapBody = {
+                    model: apiConfig.model,
+                    messages: [
+                        { role: "system", content: "Provide a rolling summary of the conversation history to act as a memory aid." },
+                        { role: "user", content: prompt }
+                    ]
+                };
+            }
             
             try {
-                const endpoint = apiConfig.url || DEFAULT_URL;
-                const response = await fetch(`${endpoint}?key=${apiConfig.primary}`, { 
+                const response = await fetch(buildUrl(apiConfig.provider, apiConfig.model, apiConfig.primary, apiConfig.url), { 
                     method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
+                    headers: buildHeaders(apiConfig.provider, apiConfig.primary), 
+                    body: JSON.stringify(recapBody) 
                 });
                 const data = await response.json();
-                
                 if (data.error) throw new Error(data.error.message);
                 
-                state.recap = data.candidates[0].content.parts[0].text;
-                $('story-recap-input').value = state.recap;
-                saveState();
-                showToast("Successfully saved!", "success");
-                
+                let txtRes = extractTxt(apiConfig.provider, data);
+                if (txtRes) {
+                    state.recap = txtRes;
+                    $('story-recap-input').value = state.recap;
+                    saveState();
+                    showToast("Successfully saved!", "success");
+                }
             } catch (err) {
                 console.error("Auto-Recap generation failed:", err);
                 showToast("Failed to generate recap", "error");
@@ -424,7 +599,6 @@
                 return;
             }
 
-            // UI Lock to prevent duplicate API costs
             sendBtn.disabled = true;
             inputEl.disabled = true;
             sendBtn.innerHTML = '<i class="ri-loader-4-line text-xl animate-spin"></i>';
@@ -438,11 +612,10 @@
             const container = $('chat-container');
             const thinkingDiv = document.createElement('div');
             thinkingDiv.className = `flex w-full justify-start animate-enter-message mb-6`;
-            thinkingDiv.innerHTML = `<div class="msg-ai px-5 py-3.5 text-sm shadow-md"><div class="flex gap-1 py-1"><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce delay-100"></span><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce delay-200"></span></div></div>`;
+            thinkingDiv.innerHTML = `<div class="msg-ai px-5 py-3.5 text-sm shadow-md"><div class="flex gap-1 py-1"><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span><span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span></div></div>`;
             container.appendChild(thinkingDiv);
             scrollToBottom();
             
-            // Dynamic Comma-Separated Lore Injection
             let loreText = "";
             if (Array.isArray(state.lore)) {
                 state.lore.forEach(l => {
@@ -456,24 +629,27 @@
                 });
             }
             
-            // If Goldfish mode is active, do not pass recap in system text.
             const recapText = (!state.goldfishMode && state.recap) ? `\nSTORY RECAP (Prior Events):\n${state.recap}\n` : "";
-            
             const systemText = `Instructions: ${state.instructions || "You are a helpful creative assistant."}\n${recapText}\n${loreText ? "Contextual Lore Triggered:\n" + loreText : ""}`;
 
-            // Handle Context Window limits based on Goldfish mode
-            let contextWindow;
-            if (state.goldfishMode) {
-                // In Goldfish mode, only send the current user message
-                contextWindow = [state.history[state.history.length - 1]];
-            } else {
-                contextWindow = state.history.slice(-40);
-            }
+            let contextWindow = state.goldfishMode ? [state.history[state.history.length - 1]] : state.history.slice(-40);
 
-            const payload = {
-                system_instruction: { parts: [{ text: systemText }] },
-                contents: contextWindow
-            };
+            let reqBody;
+            if (apiConfig.provider === "google") {
+                let contents = contextWindow.map(m => ({
+                    role: m.role === "user" ? "user" : "model",
+                    parts: [{ text: m.parts ? m.parts[0].text : m.text }]
+                }));
+                reqBody = { contents: contents };
+                if (systemText) reqBody.system_instruction = { parts: [{ text: systemText }] };
+            } else {
+                let messages = contextWindow.map(m => ({
+                    role: m.role === "user" ? "user" : "assistant",
+                    content: m.parts ? m.parts[0].text : m.text
+                }));
+                if (systemText) messages.unshift({ role: "system", content: systemText });
+                reqBody = { model: apiConfig.model, messages: messages, temperature: 0.7 };
+            }
             
             const attemptFetch = async (key) => {
                 const controller = new AbortController();
@@ -481,11 +657,10 @@
                 const timeoutTimer = setTimeout(() => controller.abort(), 30000);
                 
                 try {
-                    const endpoint = apiConfig.url || DEFAULT_URL;
-                    const response = await fetch(`${endpoint}?key=${key}`, { 
+                    const response = await fetch(buildUrl(apiConfig.provider, apiConfig.model, key, apiConfig.url), { 
                         method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(payload),
+                        headers: buildHeaders(apiConfig.provider, key), 
+                        body: JSON.stringify(reqBody),
                         signal: controller.signal
                     });
                     clearTimeout(waitToast);
@@ -508,7 +683,6 @@
                 inputEl.focus();
             };
 
-            // Set last Api Call time directly before the API calls attempt
             lastApiCallTime = Date.now();
             localStorage.setItem('cw_last_api_call', lastApiCallTime);
 
@@ -517,18 +691,9 @@
                 try {
                     data = await attemptFetch(apiConfig.primary || "MISSING");
                 } catch (err) {
-                    if (err.message === 'TIMEOUT') {
-                        if (apiConfig.backup) {
-                            showToast("API call timed out. Switching to backup...", "warning");
-                            try {
-                                data = await attemptFetch(apiConfig.backup);
-                            } catch (backupErr) {
-                                if (backupErr.message === 'TIMEOUT') throw new Error("API call timed out.");
-                                throw backupErr;
-                            }
-                        } else {
-                            throw new Error("API call timed out.");
-                        }
+                    if (err.message === 'TIMEOUT' && apiConfig.backup) {
+                        showToast("API call timed out. Switching to backup...", "warning");
+                        data = await attemptFetch(apiConfig.backup);
                     } else {
                         throw err;
                     }
@@ -537,32 +702,32 @@
                 if (data.error) throw new Error(data.error.message);
                 thinkingDiv.remove();
                 
-                state.history.push({ role: 'model', parts: [{ text: data.candidates[0].content.parts[0].text }] });
-                if (state.history.length === 2 && state.name === "New Story") state.name = text.substring(0, 30) + "...";
-                
-                resetUI(); 
-                saveState(); 
-                renderChat(); 
-                renderSessionList();
+                let finalTxt = extractTxt(apiConfig.provider, data);
+                if (finalTxt) {
+                    state.history.push({ role: 'model', parts: [{ text: finalTxt }] });
+                    if (state.history.length === 2 && state.name === "New Story") state.name = text.substring(0, 30) + "...";
+                    resetUI(); 
+                    saveState(); 
+                    renderChat(); 
+                    renderSessionList();
 
-                // Only generate recap if we aren't in goldfish mode limiting the context
-                if (!state.goldfishMode && state.history.length > 0 && state.history.length % 20 === 0) {
-                    generateRecap();
+                    if (!state.goldfishMode && state.history.length > 0 && state.history.length % 20 === 0) {
+                        generateRecap();
+                    }
+                } else {
+                    throw new Error("Empty response object received from cloud api interface.");
                 }
-                
             } catch (err) {
                 thinkingDiv.remove(); 
                 state.history.pop(); 
                 renderChat();
                 resetUI(); 
                 
-                // Return text to the textbox so the user does not have to rewrite it.
                 if (!textOverride) {
                     inputEl.value = text;
                     inputEl.style.height = 'auto';
                     inputEl.style.height = (inputEl.scrollHeight) + 'px';
                 }
-                
                 showToast(err.message, "error");
             }
         }
@@ -577,7 +742,6 @@
         function renderSessionList() {
             const list = $('session-list');
             list.innerHTML = '';
-            // Sort by most recent interaction (lastUpdated), falling back to id creation time.
             Object.values(sessions).sort((a,b) => (b.lastUpdated || parseInt(b.id) || 0) - (a.lastUpdated || parseInt(a.id) || 0)).forEach(s => {
                 const isActive = s.id === activeId;
                 const d = document.createElement('div');
@@ -614,9 +778,7 @@
         }
 
         function createNewSession() { const id = Date.now().toString(); sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "", goldfishMode: false, lastUpdated: Date.now() }; loadSession(id); showToast("New story started", "success"); }
-
         function deleteSession(id) { if(Object.keys(sessions).length <= 1) return showToast("Keep at least one story", "error"); openConfirmModal("Delete Story?", "Erase history and lore permanently?", () => { delete sessions[id]; if(activeId === id) loadSession(Object.keys(sessions)[0]); else { saveState(); renderSessionList(); } }); }
-
         function renameSession(id) { openPromptModal("Rename Story", "Enter a title:", sessions[id].name, (val) => { if(val && val.trim()) { sessions[id].name = val.trim(); if(activeId === id) state.name = val.trim(); saveState(); renderSessionList(); } }); }
 
         function duplicateSession(id) {
@@ -674,35 +836,50 @@
         function deleteLore(i) { state.lore.splice(i, 1); saveState(); renderLoreList(); }
         function editLore(i) { const item = state.lore[i]; $('lore-name-input').value = item.name; $('lore-desc-input').value = item.description; deleteLore(i); showToast("Loaded for editing", "info"); }
 
-        function saveModelSettings() { apiConfig.primary = $('primary-key-input').value; apiConfig.backup = $('backup-key-input').value; apiConfig.url = $('api-url-input').value; localStorage.setItem('cw_config', JSON.stringify(apiConfig)); showToast("Settings Saved", "success"); }
+        function saveModelSettings() { apiConfig.primary = $('primary-key-input').value.trim(); apiConfig.backup = $('backup-key-input').value.trim(); apiConfig.url = $('api-url-input').value.trim(); localStorage.setItem('cw_config', JSON.stringify(apiConfig)); showToast("Settings Saved", "success"); updateModelHeaderDisplay(); }
         function saveInstructions() { state.instructions = $('ai-instruct-input').value; saveState(); showToast("Updated Instructions", "success"); }
-        
-        function saveRecap() {
-            state.recap = $('story-recap-input').value;
-            saveState();
-            showToast("Successfully saved!", "success");
-        }
+        function saveRecap() { state.recap = $('story-recap-input').value; saveState(); showToast("Successfully saved!", "success"); }
 
         function copyToClipboard() { navigator.clipboard.writeText(JSON.stringify(sessions, null, 2)).then(() => showToast("Full Backup Copied", "success")); }
         function processImport() { try { const raw = $('import-area').value.trim(); if(!raw) return; const data = JSON.parse(raw); if(data.id) sessions[data.id] = normalizeSession(data); else Object.keys(data).forEach(k => sessions[k] = normalizeSession(data[k])); saveState(); renderSessionList(); $('import-area').value = ''; showToast("Imported data", "success"); } catch(e) { showToast("Invalid JSON", "error"); } }
 
-        window.togglePanel = (show) => { const p = $('control-panel'), b = $('panel-backdrop'); if(show) { b.classList.remove('hidden'); setTimeout(()=> { b.classList.add('opacity-100'); p.classList.remove('closed'); p.classList.add('open'); }, 10); } else { b.classList.remove('opacity-100'); p.classList.remove('open'); p.classList.add('closed'); setTimeout(()=>b.classList.add('hidden'), 300); } };
+        window.togglePanel = (show) => { 
+            const p = $('control-panel'), b = $('panel-backdrop'); 
+            if(show) { 
+                b.classList.remove('hidden'); 
+                setTimeout(()=> { 
+                    b.classList.add('opacity-100'); 
+                    p.classList.remove('closed'); 
+                    p.classList.add('open'); 
+                }, 10); 
+            } else { 
+                b.classList.remove('opacity-100'); 
+                p.classList.remove('open'); 
+                p.classList.add('closed'); 
+                setTimeout(() => b.classList.add('hidden'), 300); 
+            } 
+        };
+        
         function switchTab(tabName) { document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('text-blue-400', 'active-tab'); b.classList.add('text-gray-500'); if(b.dataset.tab===tabName) b.classList.add('text-blue-400', 'active-tab'); }); ['model','lore','data'].forEach(t => $(`tab-${t}`).classList.add('hidden')); $(`tab-${tabName}`).classList.remove('hidden'); }
         document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => switchTab(btn.dataset.tab));
 
         const tx = $('user-input');
         tx.addEventListener("input", function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; }, false);
-        tx.onkeydown = (e) => { 
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { 
-                e.preventDefault(); 
-                sendMessage(); 
-            } 
-        };
+        tx.onkeydown = (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } };
 
-        $('api-url-input').value = apiConfig.url || '';
+        $('primary-key-input').addEventListener("input", () => {
+            apiConfig.primary = $('primary-key-input').value.trim();
+            localStorage.setItem('cw_config', JSON.stringify(apiConfig));
+            detectAndAutoSync(apiConfig.primary);
+        });
+
         $('primary-key-input').value = apiConfig.primary || '';
         $('backup-key-input').value = apiConfig.backup || '';
-
+        renderProviderGrid();
+        renderModelList();
+        updateModelHeaderDisplay();
+        
+        if(apiConfig.primary) triggerCloudSync(apiConfig.provider, apiConfig.primary);
         loadSession(activeId);
     </script>
 </body>
