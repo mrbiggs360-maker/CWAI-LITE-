@@ -130,8 +130,7 @@
                 </div>
             </div>
         </div>
-        <div class="flex gap-1 items-center">
-            <button id="install-pwa-btn" class="hidden text-xs bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition btn-press mr-1 shadow-sm font-semibold" title="Install CWAI 1.9 to Desktop/Home Screen"><i class="ri-download-cloud-line text-sm"></i><span>Install</span></button>
+        <div class="flex gap-1">
             <button id="edit-chat-btn" onclick="togglePlaintextEditor()" class="text-gray-400 hover:text-white h-9 w-9 rounded-full hover:bg-gray-800/50 flex items-center justify-center transition duration-300 btn-press" title="Edit Chat in Plain Text"><i id="edit-chat-icon" class="ri-edit-line text-lg"></i></button>
             <button onclick="togglePanel(true)" class="text-gray-400 hover:text-white h-9 w-9 rounded-full hover:bg-gray-800/50 flex items-center justify-center transition hover:rotate-45 duration-300 btn-press" title="Settings"><i class="ri-settings-4-line text-lg"></i></button>
         </div>
@@ -274,36 +273,6 @@
         window.addEventListener('online', () => {
             showToast("Connection restored!", "success");
         });
-
-        
-        let deferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const btn = $('install-pwa-btn');
-            if (btn) btn.classList.remove('hidden');
-        });
-
-        window.addEventListener('appinstalled', () => {
-            deferredPrompt = null;
-            const btn = $('install-pwa-btn');
-            if (btn) btn.classList.add('hidden');
-            showToast("CWAI 1.9 installed successfully!", "success");
-        });
-
-        const installBtn = $('install-pwa-btn');
-        if (installBtn) {
-            installBtn.onclick = async () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                const choice = await deferredPrompt.userChoice;
-                if (choice.outcome === 'accepted') {
-                    showToast("Installing CWAI 1.9...", "info");
-                }
-                deferredPrompt = null;
-                installBtn.classList.add('hidden');
-            };
-        }
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
