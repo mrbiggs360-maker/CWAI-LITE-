@@ -1,10 +1,12 @@
-// CWAI 1.9 Progressive Web App Service Worker
-const CACHE_NAME = 'cwai-v1.9-pwa-cache';
+// CWAI 1.9.1 Progressive Web App Service Worker
+const CACHE_NAME = 'cwai-v1.9.1-pwa-cache';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Install: Cache critical core assets
@@ -15,7 +17,7 @@ self.addEventListener('install', (event) => {
         try {
           await cache.add(asset);
         } catch (err) {
-          console.warn(`[CWAI 1.9 SW] Precache skipped for ${asset}:`, err);
+          console.warn(`[CWAI 1.9.1 SW] Precache skipped for ${asset}:`, err);
         }
       }
     }).then(() => self.skipWaiting())
@@ -27,12 +29,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[CWAI 1.9 SW] Removing outdated cache:', key);
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => {
+            console.log('[CWAI 1.9.1 SW] Removing outdated cache:', key);
             return caches.delete(key);
-          }
-        })
+          })
       );
     }).then(() => self.clients.claim())
   );
@@ -43,10 +45,15 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // 1. Bypass cache for live LLM / AI API endpoints and non-GET methods
+  // 1. Ignore non-HTTP/HTTPS requests (browser extensions, unsupported schemes)
+  if (!request.url.startsWith('http')) {
+    return;
+  }
+
+  // 2. Bypass cache for live LLM / AI API endpoints and non-GET methods
   if (
     request.method !== 'GET' ||
-    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('generativelanguage.googleapis.com') ||
     url.hostname.includes('openrouter.ai') ||
     url.hostname.includes('openai.com') ||
     url.hostname.includes('deepseek.com')
@@ -54,7 +61,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Navigation requests (HTML document loads)
+  // 3. Navigation requests (HTML document loads)
   if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(request)
@@ -72,7 +79,7 @@ self.addEventListener('fetch', (event) => {
           
           // Absolute worst-case scenario offline screen
           return new Response(
-            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>CWAI 1.9 Offline</title></head><body style="background:#050505;color:#e5e7eb;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;"><h2>CWAI 1.9 is Offline</h2><p>Please check your internet connection.</p></div></body></html>',
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>CWAI 1.9.1 Offline</title></head><body style="background:#050505;color:#e5e7eb;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;"><h2>CWAI 1.9.1 is Offline</h2><p>Please check your internet connection.</p></div></body></html>',
             { headers: { 'Content-Type': 'text/html' } }
           );
         })
@@ -80,7 +87,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Static assets: Cache-first with stale-while-revalidate
+  // 4. Static assets: Cache-first with stale-while-revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -96,13 +103,17 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
 
-      return fetch(request).then(async (networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(request, networkResponse.clone());
-        }
-        return networkResponse;
-      });
+      return fetch(request)
+        .then(async (networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(request);
+        });
     })
   );
 });
