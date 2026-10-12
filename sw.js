@@ -2,19 +2,15 @@
 const CACHE_NAME = 'cwai-v1.9-pwa-cache';
 const PRECACHE_ASSETS = [
   './',
-  './cwai_lite.html',
   './index.html',
   './manifest.json',
-  './icon.svg',
-  './icon-192.png',
-  './icon-512.png'
+  './icon.svg'
 ];
 
 // Install: Cache critical core assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Use individual caching to avoid total failure if one relative path is missing
       for (const asset of PRECACHE_ASSETS) {
         try {
           await cache.add(asset);
@@ -71,12 +67,10 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(async () => {
           // Robust offline fallback: return cached shell
-          const cached =
-            (await caches.match(request)) ||
-            (await caches.match('./cwai_lite.html')) ||
-            (await caches.match('./index.html')) ||
-            (await caches.match('./'));
+          const cached = await caches.match(request) || await caches.match('./index.html') || await caches.match('./');
           if (cached) return cached;
+          
+          // Absolute worst-case scenario offline screen
           return new Response(
             '<!DOCTYPE html><html><head><meta charset="utf-8"><title>CWAI 1.9 Offline</title></head><body style="background:#050505;color:#e5e7eb;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;"><h2>CWAI 1.9 is Offline</h2><p>Please check your internet connection.</p></div></body></html>',
             { headers: { 'Content-Type': 'text/html' } }
