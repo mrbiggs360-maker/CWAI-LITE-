@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.8.3 Lite</title>
+    <title>CWAI 1.9</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
-    <link rel="apple-touch-icon" href="https://dummyimage.com/192x192/2563eb/ffffff.png&text=CW+Lite">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -117,25 +119,20 @@
 
     <div id="main-header" class="fixed top-0 left-0 right-0 h-14 glass z-20 flex items-center justify-between px-5 border-b border-gray-800 transition-transform duration-300">
         <div class="flex items-center gap-3">
-            <div class="logo-container" onclick="togglePanel(true)">
-                 <svg viewBox="0 0 100 100" class="w-6 h-6 text-white drop-shadow-md" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M44 32 C44 24, 28 24, 28 40 C28 48, 36 50, 36 50 C36 50, 28 52, 28 60 C28 76, 44 76, 44 68" />
-                    <path d="M44 32 L44 68" />
-                    <path d="M56 32 L56 68" />
-                    <path d="M56 32 C56 24, 72 24, 72 40 C72 48, 64 50, 64 50 C64 50, 72 52, 72 60 C72 76, 56 76, 56 68" />
-                    <path d="M44 50 L56 50" stroke-width="8" />
-                 </svg>
+            <div class="logo-container" onclick="togglePanel(true)" title="CWAI 1.9 Settings">
+                <i class="ri-brain-line text-2xl text-white drop-shadow-md"></i>
             </div>
             <div>
-                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.8.3 Lite</h1>
+                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.9</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
                     <span id="model-display-name">Loading Provider...</span>
                 </div>
             </div>
         </div>
-        <div class="flex gap-1">
-            <button onclick="document.body.requestFullscreen()" class="text-gray-400 hover:text-white h-9 w-9 rounded-full hover:bg-gray-800/50 flex items-center justify-center transition hover:rotate-90 duration-300 btn-press" title="Focus Mode"><i class="ri-fullscreen-line"></i></button>
+        <div class="flex gap-1 items-center">
+            <button id="install-pwa-btn" class="hidden text-xs bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition btn-press mr-1 shadow-sm font-semibold" title="Install CWAI 1.9 to Desktop/Home Screen"><i class="ri-download-cloud-line text-sm"></i><span>Install</span></button>
+            <button id="edit-chat-btn" onclick="togglePlaintextEditor()" class="text-gray-400 hover:text-white h-9 w-9 rounded-full hover:bg-gray-800/50 flex items-center justify-center transition duration-300 btn-press" title="Edit Chat in Plain Text"><i id="edit-chat-icon" class="ri-edit-line text-lg"></i></button>
             <button onclick="togglePanel(true)" class="text-gray-400 hover:text-white h-9 w-9 rounded-full hover:bg-gray-800/50 flex items-center justify-center transition hover:rotate-45 duration-300 btn-press" title="Settings"><i class="ri-settings-4-line text-lg"></i></button>
         </div>
     </div>
@@ -143,14 +140,8 @@
     <div id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-40 px-5 max-w-3xl mx-auto w-full space-y-6 custom-scroll scroll-smooth">
     </div>
 
-    <div class="fixed bottom-0 left-0 right-0 glass-heavy border-t border-gray-800 px-5 pt-3 pb-6 z-20">
+    <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 glass-heavy border-t border-gray-800 px-5 pt-3 pb-6 z-20 transition-all duration-200">
         <div class="max-w-3xl mx-auto flex flex-col gap-3">
-            <div class="flex justify-center gap-6 pb-1 opacity-60 hover:opacity-100 transition duration-300">
-                <button onclick="sendMessage('Suggest a creative idea')" class="text-[10px] text-gray-400 hover:text-purple-400 uppercase font-bold tracking-widest flex items-center gap-1.5 hover-lift btn-press"><i class="ri-lightbulb-flash-line"></i> Idea</button>
-                <button onclick="sendMessage('Improve the prose above')" class="text-[10px] text-gray-400 hover:text-blue-400 uppercase font-bold tracking-widest flex items-center gap-1.5 hover-lift btn-press"><i class="ri-edit-circle-line"></i> Refine</button>
-                <button onclick="sendMessage('Continue the story')" class="text-[10px] text-gray-400 hover:text-green-400 uppercase font-bold tracking-widest flex items-center gap-1.5 hover-lift btn-press"><i class="ri-arrow-right-circle-line"></i> Next</button>
-            </div>
-
             <div class="flex items-end gap-2 relative bg-gray-900/80 p-1.5 rounded-[24px] border border-gray-800 shadow-xl ring-1 ring-white/5 focus-within:ring-blue-500/50 focus-within:border-blue-500/50 transition-all duration-300">
                 <textarea id="user-input" rows="1" class="w-full bg-transparent text-gray-100 px-3 py-2.5 focus:outline-none resize-none overflow-hidden max-h-48 text-sm placeholder-gray-600 font-medium leading-relaxed" placeholder="Type a message..."></textarea>
                 <button id="send-btn" onclick="sendMessage()" class="h-10 w-10 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105 active:scale-95 btn-press">
@@ -238,7 +229,7 @@
                 </div>
 
                 <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition animate-pop-in">
-                    <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="ri-quill-pen-line"></i> Add / Edit Lore</h3>
+                    <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="ri-brain-line"></i> Add / Edit Lore</h3>
                     <input id="lore-name-input" type="text" placeholder="Name (e.g., Cinder Hut, The Hut, Hut)" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white mb-2 focus:border-purple-500 outline-none transition">
                     <textarea id="lore-desc-input" placeholder="Description" class="w-full bg-black/50 border border-gray-800 rounded-lg p-2.5 text-xs text-white h-24 resize-none focus:border-purple-500 outline-none mb-3 transition"></textarea>
                     <button onclick="addLore()" class="w-full py-2 bg-purple-600/10 border border-purple-600/30 text-purple-400 text-xs font-bold rounded-lg hover:bg-purple-600 hover:text-white transition btn-press">Add to Context</button>
@@ -284,6 +275,36 @@
             showToast("Connection restored!", "success");
         });
 
+        
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = $('install-pwa-btn');
+            if (btn) btn.classList.remove('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            const btn = $('install-pwa-btn');
+            if (btn) btn.classList.add('hidden');
+            showToast("CWAI 1.9 installed successfully!", "success");
+        });
+
+        const installBtn = $('install-pwa-btn');
+        if (installBtn) {
+            installBtn.onclick = async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const choice = await deferredPrompt.userChoice;
+                if (choice.outcome === 'accepted') {
+                    showToast("Installing CWAI 1.9...", "info");
+                }
+                deferredPrompt = null;
+                installBtn.classList.add('hidden');
+            };
+        }
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -303,6 +324,7 @@
         let activeId = localStorage.getItem('cw_active_id');
         let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { primary: '', backup: '', url: '', provider: 'google', model: 'gemini-2.0-flash-lite-preview-02-05', cachedModels: {}, lastSync: {} };
         let lastApiCallTime = parseInt(localStorage.getItem('cw_last_api_call')) || 0;
+        let isEditingChat = false;
         
         if (!apiConfig.provider) apiConfig.provider = 'google';
         if (!apiConfig.model) apiConfig.model = 'gemini-2.0-flash-lite-preview-02-05';
@@ -470,13 +492,151 @@
             return sess;
         }
 
+        function formatChatAsPlainText(history) {
+            if (!history || history.length === 0) return "";
+            return history.map(msg => {
+                const isUser = msg.role === 'user';
+                const roleLabel = isUser ? 'User' : 'AI';
+                const txt = msg.parts ? msg.parts[0].text : (msg.text || "");
+                return `${roleLabel}:\n${txt.trim()}`;
+            }).join('\n\n---\n\n');
+        }
+
+        function parsePlainTextChat(rawText) {
+            const text = (rawText || "").trim();
+            if (!text) return [];
+
+            const pattern = /(?:^|\n)(?:[-*_]{3,}\s*\n)?\s*(User|AI|Model|Assistant|Human)\s*:\s*/gi;
+            const matches = [];
+            let match;
+            while ((match = pattern.exec(text)) !== null) {
+                matches.push({
+                    roleStr: match[1].toLowerCase(),
+                    startIndex: match.index,
+                    headerEndIndex: pattern.lastIndex
+                });
+            }
+
+            if (matches.length === 0) {
+                const parts = text.split(/\n[-*_]{3,}\n/).map(p => p.trim()).filter(Boolean);
+                if (parts.length > 1) {
+                    return parts.map((p, idx) => ({
+                        role: idx % 2 === 0 ? "user" : "model",
+                        parts: [{ text: p }]
+                    }));
+                } else {
+                    return [{ role: "user", parts: [{ text }] }];
+                }
+            }
+
+            const history = [];
+            if (matches[0].startIndex > 0) {
+                const preText = text.substring(0, matches[0].startIndex).trim();
+                if (preText) {
+                    history.push({ role: "user", parts: [{ text: preText }] });
+                }
+            }
+
+            for (let i = 0; i < matches.length; i++) {
+                const curr = matches[i];
+                const role = (curr.roleStr === "user" || curr.roleStr === "human") ? "user" : "model";
+                const start = curr.headerEndIndex;
+                const end = (i + 1 < matches.length) ? matches[i + 1].startIndex : text.length;
+                let msgText = text.substring(start, end).trim();
+                msgText = msgText.replace(/\n[-*_]{3,}\s*$/, "").trim();
+                if (msgText) {
+                    history.push({ role, parts: [{ text: msgText }] });
+                }
+            }
+            return history;
+        }
+
+        function togglePlaintextEditor(forceState) {
+            if (typeof forceState === 'boolean') {
+                isEditingChat = forceState;
+            } else {
+                isEditingChat = !isEditingChat;
+            }
+            renderChat();
+            if (isEditingChat) {
+                const area = $('plaintext-editor-area');
+                if (area) {
+                    area.value = formatChatAsPlainText(state.history);
+                    area.focus();
+                }
+            }
+        }
+
+        function savePlaintextEditor() {
+            const area = $('plaintext-editor-area');
+            if (!area) return;
+            const parsed = parsePlainTextChat(area.value);
+            state.history = parsed;
+            saveState();
+            isEditingChat = false;
+            renderChat();
+            renderSessionList();
+            showToast(`Saved chat (${parsed.length} messages)`, "success");
+        }
+
         function renderChat() {
             const container = $('chat-container');
+            const bottomBar = $('bottom-bar');
+            const editBtn = $('edit-chat-btn');
+            const editIcon = $('edit-chat-icon');
+
+            if (editBtn && editIcon) {
+                if (isEditingChat) {
+                    editBtn.classList.add('text-blue-400', 'bg-blue-600/20');
+                    editBtn.classList.remove('text-gray-400');
+                    editBtn.title = "Exit Plain Text Editor";
+                } else {
+                    editBtn.classList.remove('text-blue-400', 'bg-blue-600/20');
+                    editBtn.classList.add('text-gray-400');
+                    editBtn.title = "Edit Chat in Plain Text";
+                }
+            }
+
+            if (bottomBar) {
+                if (isEditingChat) {
+                    bottomBar.classList.add('opacity-30', 'pointer-events-none');
+                } else {
+                    bottomBar.classList.remove('opacity-30', 'pointer-events-none');
+                }
+            }
+
             container.innerHTML = '';
-            if (!state.history || state.history.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-quill-pen-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.8.3 Lite</h2><p class="text-sm font-mono text-gray-500">Ready to weave a tale.</p></div>`;
+
+            if (isEditingChat) {
+                container.innerHTML = `
+                    <div class="flex flex-col space-y-3 animate-fade-in pb-12">
+                        <div class="flex items-center justify-between bg-gray-900/90 p-3.5 rounded-xl border border-gray-800 sticky top-0 z-10 backdrop-blur-md shadow-lg">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-blue-400 flex items-center gap-1.5"><i class="ri-edit-line"></i> Plain Text Chat Editor</span>
+                                <span class="text-[10px] text-gray-500 font-mono">(${state.history.length} msgs)</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="togglePlaintextEditor(false)" class="px-3 py-1.5 text-xs text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition btn-press">Cancel</button>
+                                <button onclick="savePlaintextEditor()" class="px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-lg shadow-blue-900/30 transition btn-press">Save Changes</button>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-gray-500 px-1 leading-relaxed">
+                            Edit the chat history in plain text below. Format messages with <span class="text-blue-400 font-mono font-medium">User:</span> and <span class="text-blue-400 font-mono font-medium">AI:</span> headers (separated by <span class="text-blue-400 font-mono">---</span>).
+                        </p>
+                        <textarea id="plaintext-editor-area" class="w-full min-h-[480px] bg-black/60 border border-gray-800 rounded-xl p-4 text-xs font-mono text-gray-200 resize-y focus:border-blue-500 outline-none transition custom-scroll leading-relaxed" placeholder="Type or paste chat messages in plain text...&#10;&#10;User:&#10;Hello&#10;&#10;---&#10;&#10;AI:&#10;Hi! How can I help you today?"></textarea>
+                    </div>`;
                 return;
             }
+
+            if (!state.history || state.history.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-brain-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.9</h2><p class="text-sm font-mono text-gray-500 mb-4">Ready to weave a tale.</p><button onclick="togglePlaintextEditor(true)" class="text-xs text-gray-400 hover:text-blue-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 border border-gray-800 hover:border-blue-500/40 transition btn-press"><i class="ri-edit-line"></i> Paste / Edit in Plain Text</button></div>`;
+                return;
+            }
+
+            const topBar = document.createElement('div');
+            topBar.className = 'flex justify-end pb-1';
+            topBar.innerHTML = `<button onclick="togglePlaintextEditor(true)" class="text-[11px] text-gray-500 hover:text-blue-400 flex items-center gap-1 transition btn-press py-1 px-2.5 rounded-lg hover:bg-gray-900/70 border border-transparent hover:border-gray-800"><i class="ri-edit-line"></i> Edit Chat (Plain Text)</button>`;
+            container.appendChild(topBar);
             
             state.history.forEach(msg => {
                 const isUser = msg.role === 'user';
@@ -519,7 +679,7 @@
             if (prov !== "google") h["Authorization"] = `Bearer ${key}`;
             if (prov === "openrouter") {
                 h["HTTP-Referer"] = window.location.href;
-                h["X-Title"] = "CWAI 1.8.3 Lite";
+                h["X-Title"] = "CWAI 1.9";
             }
             return h;
         }
@@ -597,6 +757,10 @@
             if (!isConnected) {
                 showToast("No internet connection.", "error");
                 return;
+            }
+
+            if (isEditingChat) {
+                isEditingChat = false;
             }
 
             sendBtn.disabled = true;
@@ -762,6 +926,7 @@
         }
 
         function loadSession(id) { 
+            isEditingChat = false;
             activeId = id; 
             state = normalizeSession(sessions[id]); 
             saveState(); 
@@ -777,9 +942,33 @@
             if(window.innerWidth < 768) togglePanel(false); 
         }
 
-        function createNewSession() { const id = Date.now().toString(); sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "", goldfishMode: false, lastUpdated: Date.now() }; loadSession(id); showToast("New story started", "success"); }
-        function deleteSession(id) { if(Object.keys(sessions).length <= 1) return showToast("Keep at least one story", "error"); openConfirmModal("Delete Story?", "Erase history and lore permanently?", () => { delete sessions[id]; if(activeId === id) loadSession(Object.keys(sessions)[0]); else { saveState(); renderSessionList(); } }); }
-        function renameSession(id) { openPromptModal("Rename Story", "Enter a title:", sessions[id].name, (val) => { if(val && val.trim()) { sessions[id].name = val.trim(); if(activeId === id) state.name = val.trim(); saveState(); renderSessionList(); } }); }
+        function createNewSession() { 
+            isEditingChat = false;
+            const id = Date.now().toString(); 
+            sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "", goldfishMode: false, lastUpdated: Date.now() }; 
+            loadSession(id); 
+            showToast("New story started", "success"); 
+        }
+
+        function deleteSession(id) { 
+            if(Object.keys(sessions).length <= 1) return showToast("Keep at least one story", "error"); 
+            openConfirmModal("Delete Story?", "Erase history and lore permanently?", () => { 
+                delete sessions[id]; 
+                if(activeId === id) loadSession(Object.keys(sessions)[0]); 
+                else { saveState(); renderSessionList(); } 
+            }); 
+        }
+
+        function renameSession(id) { 
+            openPromptModal("Rename Story", "Enter a title:", sessions[id].name, (val) => { 
+                if(val && val.trim()) { 
+                    sessions[id].name = val.trim(); 
+                    if(activeId === id) state.name = val.trim(); 
+                    saveState(); 
+                    renderSessionList(); 
+                } 
+            }); 
+        }
 
         function duplicateSession(id) {
             const original = sessions[id];
