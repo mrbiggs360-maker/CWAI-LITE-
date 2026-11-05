@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CWAI 1.9</title>
+    <title>CWAI 1.9.1</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#050505">
@@ -119,11 +119,11 @@
 
     <div id="main-header" class="fixed top-0 left-0 right-0 h-14 glass z-20 flex items-center justify-between px-5 border-b border-gray-800 transition-transform duration-300">
         <div class="flex items-center gap-3">
-            <div class="logo-container" onclick="togglePanel(true)" title="CWAI 1.9 Settings">
+            <div class="logo-container" onclick="togglePanel(true)" title="CWAI 1.9.1 Settings">
                 <i class="ri-brain-line text-2xl text-white drop-shadow-md"></i>
             </div>
             <div>
-                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.9</h1>
+                <h1 class="text-sm font-bold text-gray-100 tracking-tight leading-none">CWAI 1.9.1</h1>
                 <div class="text-[10px] text-gray-400 flex items-center gap-1 cursor-pointer hover:text-blue-400 transition mt-0.5" onclick="togglePanel(true)">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse"></span>
                     <span id="model-display-name">Loading Provider...</span>
@@ -294,6 +294,7 @@
         let apiConfig = JSON.parse(localStorage.getItem('cw_config')) || { primary: '', backup: '', url: '', provider: 'google', model: 'gemini-2.0-flash-lite-preview-02-05', cachedModels: {}, lastSync: {} };
         let lastApiCallTime = parseInt(localStorage.getItem('cw_last_api_call')) || 0;
         let isEditingChat = false;
+        let keySyncDebounceTimer = null;
         
         if (!apiConfig.provider) apiConfig.provider = 'google';
         if (!apiConfig.model) apiConfig.model = 'gemini-2.0-flash-lite-preview-02-05';
@@ -302,11 +303,20 @@
 
         if (!activeId || !sessions[activeId]) {
             const newId = Date.now().toString();
-            sessions[newId] = { id: newId, name: "New Story", history: [], lore: [], instructions: "", recap: "", goldfishMode: false, lastUpdated: Date.now() };
+            sessions[newId] = { id: newId, name: "New Story", history: [], lore: [], instructions: "", recap: "", lastRecapCount: 0, goldfishMode: false, lastUpdated: Date.now() };
             activeId = newId;
         }
         let state = sessions[activeId];
         const $ = (id) => document.getElementById(id);
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
         
         function showToast(msg, type = 'info') {
             const el = document.createElement('div');
@@ -450,6 +460,9 @@
             if (!sess.history) sess.history = [];
             if (sess.aiInstructions && !sess.instructions) sess.instructions = sess.aiInstructions;
             if (sess.recap === undefined) sess.recap = "";
+            if (sess.lastRecapCount === undefined || sess.lastRecapCount > sess.history.length) {
+                sess.lastRecapCount = sess.history.length;
+            }
             if (sess.goldfishMode === undefined) sess.goldfishMode = false;
             if (!sess.lastUpdated) sess.lastUpdated = parseInt(sess.id) || Date.now();
             if (!Array.isArray(sess.lore) && typeof sess.lore === 'object') {
@@ -541,11 +554,60 @@
             if (!area) return;
             const parsed = parsePlainTextChat(area.value);
             state.history = parsed;
+            if ((state.lastRecapCount || 0) > state.history.length) {
+                state.lastRecapCount = state.history.length;
+            }
             saveState();
             isEditingChat = false;
             renderChat();
             renderSessionList();
             showToast(`Saved chat (${parsed.length} messages)`, "success");
+        }
+
+        function createMessageElement(msg) {
+            const isUser = msg.role === 'user';
+            const text = msg.parts ? msg.parts[0].text : (msg.text || "");
+            const div = document.createElement('div');
+            div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-enter-message mb-6`;
+            const renderedContent = isUser
+                ? `<div class="whitespace-pre-wrap break-words">${escapeHtml(text)}</div>`
+                : marked.parse(text);
+            div.innerHTML = `<div class="max-w-[90%] md:max-w-[85%] px-5 py-3.5 text-sm shadow-md leading-relaxed ${isUser ? 'msg-user' : 'msg-ai'}"><div class="prose prose-invert">${renderedContent}</div></div>`;
+
+            if (!isUser) {
+                div.querySelectorAll('pre').forEach(pre => {
+                    const codeBlock = pre.querySelector('code');
+                    if (codeBlock) hljs.highlightElement(codeBlock);
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-code-btn';
+                    copyBtn.innerText = 'Copy';
+                    copyBtn.onclick = () => {
+                        const rawCode = codeBlock ? codeBlock.innerText : pre.innerText;
+                        navigator.clipboard.writeText(rawCode).then(() => {
+                            copyBtn.innerText = 'Copied!';
+                            setTimeout(() => { copyBtn.innerText = 'Copy'; }, 1500);
+                        });
+                    };
+                    pre.appendChild(copyBtn);
+                });
+            }
+            return div;
+        }
+
+        function appendMessageToDOM(msg) {
+            const container = $('chat-container');
+            if (!container.querySelector('[data-chat-top-bar]')) {
+                container.innerHTML = '';
+                const topBar = document.createElement('div');
+                topBar.dataset.chatTopBar = 'true';
+                topBar.className = 'flex justify-end pb-1';
+                topBar.innerHTML = `<button onclick="togglePlaintextEditor(true)" class="text-[11px] text-gray-500 hover:text-blue-400 flex items-center gap-1 transition btn-press py-1 px-2.5 rounded-lg hover:bg-gray-900/70 border border-transparent hover:border-gray-800"><i class="ri-edit-line"></i> Edit Chat (Plain Text)</button>`;
+                container.appendChild(topBar);
+            }
+            const msgEl = createMessageElement(msg);
+            container.appendChild(msgEl);
+            scrollToBottom();
+            return msgEl;
         }
 
         function renderChat() {
@@ -598,40 +660,27 @@
             }
 
             if (!state.history || state.history.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-brain-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.9</h2><p class="text-sm font-mono text-gray-500 mb-4">Ready to weave a tale.</p><button onclick="togglePlaintextEditor(true)" class="text-xs text-gray-400 hover:text-blue-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 border border-gray-800 hover:border-blue-500/40 transition btn-press"><i class="ri-edit-line"></i> Paste / Edit in Plain Text</button></div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[60vh] text-gray-600 fade-in"><div class="w-20 h-20 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-6 shadow-2xl rotate-3 hover:rotate-0 transition duration-500 group animate-pop-in"><i class="ri-brain-line text-5xl text-gray-700 group-hover:text-blue-500 transition-colors"></i></div><h2 class="text-xl font-bold text-gray-300 mb-2">CWAI 1.9.1</h2><p class="text-sm font-mono text-gray-500 mb-4">Ready to weave a tale.</p><button onclick="togglePlaintextEditor(true)" class="text-xs text-gray-400 hover:text-blue-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 border border-gray-800 hover:border-blue-500/40 transition btn-press"><i class="ri-edit-line"></i> Paste / Edit in Plain Text</button></div>`;
                 return;
             }
 
             const topBar = document.createElement('div');
+            topBar.dataset.chatTopBar = 'true';
             topBar.className = 'flex justify-end pb-1';
             topBar.innerHTML = `<button onclick="togglePlaintextEditor(true)" class="text-[11px] text-gray-500 hover:text-blue-400 flex items-center gap-1 transition btn-press py-1 px-2.5 rounded-lg hover:bg-gray-900/70 border border-transparent hover:border-gray-800"><i class="ri-edit-line"></i> Edit Chat (Plain Text)</button>`;
             container.appendChild(topBar);
             
+            const frag = document.createDocumentFragment();
             state.history.forEach(msg => {
-                const isUser = msg.role === 'user';
-                const text = msg.parts ? msg.parts[0].text : msg.text || "";
-                const div = document.createElement('div');
-                div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-enter-message mb-6`;
-                div.innerHTML = `<div class="max-w-[90%] md:max-w-[85%] px-5 py-3.5 text-sm shadow-md leading-relaxed ${isUser ? 'msg-user' : 'msg-ai'}"><div class="prose prose-invert">${isUser ? text : marked.parse(text)}</div></div>`;
-                container.appendChild(div);
+                frag.appendChild(createMessageElement(msg));
             });
-            document.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+            container.appendChild(frag);
             scrollToBottom();
         }
 
         function scrollToBottom() {
             const c = $('chat-container');
             requestAnimationFrame(() => c.scrollTop = c.scrollHeight);
-        }
-
-        async function checkInternet() {
-            if (!navigator.onLine) return false;
-            try {
-                await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' });
-                return true;
-            } catch (e) {
-                return false;
-            }
         }
 
         function buildUrl(prov, model, key, customUrl) {
@@ -648,7 +697,7 @@
             if (prov !== "google") h["Authorization"] = `Bearer ${key}`;
             if (prov === "openrouter") {
                 h["HTTP-Referer"] = window.location.href;
-                h["X-Title"] = "CWAI 1.9";
+                h["X-Title"] = "CWAI 1.9.1";
             }
             return h;
         }
@@ -659,6 +708,54 @@
                 return json.choices[0].message.content;
             } catch (e) {
                 return null;
+            }
+        }
+
+        async function requestApiWithFailover(reqBody, showWaitToast = false) {
+            const attemptFetch = async (key) => {
+                const controller = new AbortController();
+                const waitToast = showWaitToast ? setTimeout(() => showToast("Please wait...", "info"), 15000) : null;
+                const timeoutTimer = setTimeout(() => controller.abort(), 30000);
+                
+                try {
+                    const response = await fetch(buildUrl(apiConfig.provider, apiConfig.model, key, apiConfig.url), { 
+                        method: 'POST', 
+                        headers: buildHeaders(apiConfig.provider, key), 
+                        body: JSON.stringify(reqBody),
+                        signal: controller.signal
+                    });
+                    if (waitToast) clearTimeout(waitToast);
+                    clearTimeout(timeoutTimer);
+                    const data = await response.json();
+                    if (!response.ok || data.error) {
+                        throw new Error(data.error?.message || `HTTP Error ${response.status}`);
+                    }
+                    return data;
+                } catch (err) {
+                    if (waitToast) clearTimeout(waitToast);
+                    clearTimeout(timeoutTimer);
+                    if (err.name === 'AbortError') throw new Error('Request timed out (30s)');
+                    throw err;
+                }
+            };
+
+            const primaryKey = (apiConfig.primary || "").trim();
+            const backupKey = (apiConfig.backup || "").trim();
+
+            if (primaryKey) {
+                try {
+                    return await attemptFetch(primaryKey);
+                } catch (err) {
+                    if (backupKey && backupKey !== primaryKey) {
+                        showToast("Primary key failed. Switching to backup...", "warning");
+                        return await attemptFetch(backupKey);
+                    }
+                    throw err;
+                }
+            } else if (backupKey) {
+                return await attemptFetch(backupKey);
+            } else {
+                throw new Error("API Key Required");
             }
         }
 
@@ -686,14 +783,7 @@
             }
             
             try {
-                const response = await fetch(buildUrl(apiConfig.provider, apiConfig.model, apiConfig.primary, apiConfig.url), { 
-                    method: 'POST', 
-                    headers: buildHeaders(apiConfig.provider, apiConfig.primary), 
-                    body: JSON.stringify(recapBody) 
-                });
-                const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
-                
+                const data = await requestApiWithFailover(recapBody, false);
                 let txtRes = extractTxt(apiConfig.provider, data);
                 if (txtRes) {
                     state.recap = txtRes;
@@ -710,11 +800,17 @@
         async function sendMessage(textOverride) {
             const inputEl = $('user-input');
             const sendBtn = $('send-btn');
+            if (sendBtn.disabled) return;
+
             const text = textOverride || inputEl.value.trim();
-            
             if (!text) return;
             if (!apiConfig.primary && !apiConfig.backup) { togglePanel(true); switchTab('model'); showToast("API Key Required", "error"); return; }
             
+            if (!navigator.onLine) {
+                showToast("No internet connection.", "error");
+                return;
+            }
+
             const now = Date.now();
             if (now - lastApiCallTime < 15000) {
                 const remaining = Math.ceil((15000 - (now - lastApiCallTime)) / 1000);
@@ -722,15 +818,9 @@
                 return;
             }
 
-            const isConnected = await checkInternet();
-            if (!isConnected) {
-                showToast("No internet connection.", "error");
-                return;
-            }
-
-            if (isEditingChat) {
-                isEditingChat = false;
-            }
+            const prevApiCallTime = lastApiCallTime;
+            lastApiCallTime = now;
+            localStorage.setItem('cw_last_api_call', lastApiCallTime);
 
             sendBtn.disabled = true;
             inputEl.disabled = true;
@@ -739,8 +829,16 @@
             sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             if (!textOverride) { inputEl.value = ''; inputEl.style.height = 'auto'; }
-            state.history.push({ role: 'user', parts: [{ text }] });
-            renderChat();
+            const userMsg = { role: 'user', parts: [{ text }] };
+            state.history.push(userMsg);
+
+            let userBubbleEl = null;
+            if (isEditingChat) {
+                isEditingChat = false;
+                renderChat();
+            } else {
+                userBubbleEl = appendMessageToDOM(userMsg);
+            }
             
             const container = $('chat-container');
             const thinkingDiv = document.createElement('div');
@@ -783,29 +881,6 @@
                 if (systemText) messages.unshift({ role: "system", content: systemText });
                 reqBody = { model: apiConfig.model, messages: messages, temperature: 0.7 };
             }
-            
-            const attemptFetch = async (key) => {
-                const controller = new AbortController();
-                const waitToast = setTimeout(() => showToast("Please wait...", "info"), 15000);
-                const timeoutTimer = setTimeout(() => controller.abort(), 30000);
-                
-                try {
-                    const response = await fetch(buildUrl(apiConfig.provider, apiConfig.model, key, apiConfig.url), { 
-                        method: 'POST', 
-                        headers: buildHeaders(apiConfig.provider, key), 
-                        body: JSON.stringify(reqBody),
-                        signal: controller.signal
-                    });
-                    clearTimeout(waitToast);
-                    clearTimeout(timeoutTimer);
-                    return await response.json();
-                } catch (err) {
-                    clearTimeout(waitToast);
-                    clearTimeout(timeoutTimer);
-                    if (err.name === 'AbortError') throw new Error('TIMEOUT');
-                    throw err;
-                }
-            };
 
             const resetUI = () => {
                 sendBtn.disabled = false;
@@ -816,35 +891,23 @@
                 inputEl.focus();
             };
 
-            lastApiCallTime = Date.now();
-            localStorage.setItem('cw_last_api_call', lastApiCallTime);
-
             try {
-                let data;
-                try {
-                    data = await attemptFetch(apiConfig.primary || "MISSING");
-                } catch (err) {
-                    if (err.message === 'TIMEOUT' && apiConfig.backup) {
-                        showToast("API call timed out. Switching to backup...", "warning");
-                        data = await attemptFetch(apiConfig.backup);
-                    } else {
-                        throw err;
-                    }
-                }
-
-                if (data.error) throw new Error(data.error.message);
+                const data = await requestApiWithFailover(reqBody, true);
                 thinkingDiv.remove();
                 
                 let finalTxt = extractTxt(apiConfig.provider, data);
                 if (finalTxt) {
-                    state.history.push({ role: 'model', parts: [{ text: finalTxt }] });
+                    const aiMsg = { role: 'model', parts: [{ text: finalTxt }] };
+                    state.history.push(aiMsg);
                     if (state.history.length === 2 && state.name === "New Story") state.name = text.substring(0, 30) + "...";
+                    appendMessageToDOM(aiMsg);
                     resetUI(); 
                     saveState(); 
-                    renderChat(); 
                     renderSessionList();
 
-                    if (!state.goldfishMode && state.history.length > 0 && state.history.length % 20 === 0) {
+                    if (!state.goldfishMode && state.history.length > 0 && (state.history.length - (state.lastRecapCount || 0) >= 20)) {
+                        state.lastRecapCount = state.history.length;
+                        saveState();
                         generateRecap();
                     }
                 } else {
@@ -853,7 +916,13 @@
             } catch (err) {
                 thinkingDiv.remove(); 
                 state.history.pop(); 
-                renderChat();
+                if (userBubbleEl && state.history.length > 0) {
+                    userBubbleEl.remove();
+                } else {
+                    renderChat();
+                }
+                lastApiCallTime = prevApiCallTime;
+                localStorage.setItem('cw_last_api_call', lastApiCallTime);
                 resetUI(); 
                 
                 if (!textOverride) {
@@ -914,7 +983,7 @@
         function createNewSession() { 
             isEditingChat = false;
             const id = Date.now().toString(); 
-            sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "", goldfishMode: false, lastUpdated: Date.now() }; 
+            sessions[id] = { id, name: "New Story", history: [], lore: [], instructions: "", recap: "", lastRecapCount: 0, goldfishMode: false, lastUpdated: Date.now() }; 
             loadSession(id); 
             showToast("New story started", "success"); 
         }
@@ -951,6 +1020,26 @@
             saveState();
             renderSessionList();
             showToast("Story duplicated", "success");
+        }
+
+        async function forceLoadPresets() {
+            try {
+                const res = await fetch('./presets.json', { cache: 'no-store' });
+                if (!res.ok) throw new Error('No presets file');
+                const data = await res.json();
+                if (data.id) {
+                    sessions[data.id] = normalizeSession(data);
+                } else {
+                    Object.keys(data).forEach(k => sessions[k] = normalizeSession(data[k]));
+                }
+                saveState();
+                renderSessionList();
+                showToast("Presets loaded!", "success");
+            } catch (e) {
+                const importArea = $('import-area');
+                if (importArea) importArea.focus();
+                showToast("No presets.json found — paste JSON below to import.", "info");
+            }
         }
 
         function factoryReset() {
@@ -1028,7 +1117,10 @@
         $('primary-key-input').addEventListener("input", () => {
             apiConfig.primary = $('primary-key-input').value.trim();
             localStorage.setItem('cw_config', JSON.stringify(apiConfig));
-            detectAndAutoSync(apiConfig.primary);
+            clearTimeout(keySyncDebounceTimer);
+            keySyncDebounceTimer = setTimeout(() => {
+                detectAndAutoSync(apiConfig.primary);
+            }, 500);
         });
 
         $('primary-key-input').value = apiConfig.primary || '';
