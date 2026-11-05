@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "CWAI 1.9",
+  "name": "CWAI 1.9.1",
   "short_name": "CWAI",
   "description": "Progressive Web App for local AI chat and story weaving.",
   "start_url": "./",
